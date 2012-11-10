@@ -1,16 +1,16 @@
 # -*- encoding: utf-8 -*-
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'rateable/version'
+require 'pause/version'
 
 Gem::Specification.new do |gem|
-  gem.name          = "rateable"
-  gem.version       = Rateable::VERSION
-  gem.authors       = ["Atasay Gokyaka", "Paul Henry"]
+  gem.name          = "pause"
+  gem.version       = Pause::VERSION
+  gem.authors       = ["Atasay Gokkaya", "Paul Henry"]
   gem.email         = %w(atasay@wanelo.com paul@wanelo.com)
   gem.description   = %q(Real time redis rate limiting)
   gem.summary       = %q(Real time redis rate limiting)
-  gem.homepage      = "https://github.com/wanelo/rateable"
+  gem.homepage      = "https://github.com/wanelo/pause"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }

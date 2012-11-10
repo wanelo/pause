@@ -1,3 +1,3 @@
-module Rateable
+module Pause
   VERSION = "0.0.1"
 end

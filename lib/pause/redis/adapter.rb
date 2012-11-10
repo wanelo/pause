@@ -1,10 +1,10 @@
-require 'rateable/helper/timing'
+require 'pause/helper/timing'
 
-module Rateable
+module Pause
   module Redis
     class Adapter
 
-      include Rateable::Helper::Timing
+      include Pause::Helper::Timing
       attr_accessor :resolution, :time_blocks_to_keep, :history
 
       def initialize(config)
@@ -27,40 +27,37 @@ module Rateable
         end
       end
 
-      def identifier_history(key)
+      def key_history(key)
         extract_set_elements(white_key(key))
       end
 
       def block(key, block_ttl)
-        puts "blocking: #{key}"
         redis.setex(blocked_key(key), block_ttl, nil)
       end
 
       def blocked?(key)
-        !redis.get(blocked_key(key))
+        !!redis.get(blocked_key(key))
       end
 
       private
 
       def redis
-        Rateable.redis
+        @redis_conn ||= ::Redis.new(host: Pause.config.redis_host,
+                                    port: Pause.config.redis_port,
+                                    db:   Pause.config.redis_db)
       end
 
-      def get(key)
-        extract_set_elements(key)
+      def white_key(key)
+        "i:#{key}"
       end
 
-      def white_key(identifier)
-        "i:#{identifier}"
-      end
-
-      def blocked_key(identifier)
-        "b:#{identifier}"
+      def blocked_key(key)
+        "b:#{key}"
       end
 
       def extract_set_elements(key)
         (redis.zrange key, 0, -1, :with_scores => true).map do |slice|
-          Rateable::SetElement.new(slice[0].to_i, slice[1].to_i)
+          Pause::SetElement.new(slice[0].to_i, slice[1].to_i)
         end.sort
       end
     end

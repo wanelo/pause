@@ -1,4 +1,4 @@
-module Rateable
+module Pause
   module Helper
     module Timing
       def period_marker(resolution, timestamp = Time.now)
