@@ -6,8 +6,10 @@ describe Pause::Redis::Adapter do
 
   let(:resolution) { 10 }
   let(:history) { 60 }
+  let(:configuration) { Pause::Configuration.new }
 
   before do
+    Pause.stub(:config).and_return(configuration)
     Pause.config.stub(:resolution).and_return(resolution)
     Pause.config.stub(:history).and_return(history)
   end

@@ -5,24 +5,19 @@ describe Pause::Analyzer do
   include Pause::Helper::Timing
 
   class FollowPushNotification < Pause::Action
-    def self.scope
-      "ipn:follow"
-    end
+    scope "ipn:follow"
+    check 20, 5, 12
+    check 40, 7, 12
   end
 
   let(:resolution) { 10 }
   let(:history) { 60 }
-  let(:checks) {
-    {
-      FollowPushNotification.scope => [Pause::PeriodCheck.new(20, 5, 12),
-                                       Pause::PeriodCheck.new(40, 7, 12)]
-    }
-  }
+  let(:configuration) { Pause::Configuration.new }
 
   before do
+    Pause.stub(:config).and_return(configuration)
     Pause.config.stub(:resolution).and_return(resolution)
     Pause.config.stub(:history).and_return(history)
-    Pause.config.stub(:checks).and_return(checks)
   end
 
   let(:analyzer) { Pause.analyzer }

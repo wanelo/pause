@@ -24,7 +24,7 @@ module Pause
     def analyze(action)
       timestamp = period_marker(Pause.config.resolution, Time.now.to_i)
       set = adapter.key_history(action.key)
-      Pause.config.checks[action.scope].each do |period_check|
+      action.checks.each do |period_check|
         start_time = timestamp - period_check.period_seconds
         set.reverse.inject(0) do |sum, element|
           break if element.ts < start_time

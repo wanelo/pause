@@ -24,11 +24,11 @@ module Pause
     end
 
     def configure(&block)
-      Pause::Configuration.configure(&block)
+      @configuration ||= Pause::Configuration.new.configure(&block)
     end
 
     def config
-      Pause::Configuration
+      @configuration
     end
   end
 end

@@ -18,7 +18,30 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Define local actions for your application
+
+```ruby
+require 'pause'
+
+class FollowAction < Pause::Action
+  scope "ipn:follow"
+  check 100, 100, 200
+  check 200, 150, 250
+end
+```
+
+
+
+Configure Pause. This could be in a Rails initializer.
+
+```ruby
+Pause.configure do |config|
+  config.redis_host = "127.0.0.1"
+  config.redis_port = 6379
+  config.resolution = 10
+  config.history    = 60
+end
+```
 
 ## Contributing
 
