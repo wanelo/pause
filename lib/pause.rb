@@ -3,6 +3,7 @@ require "pause/configuration"
 require "pause/action"
 require "pause/analyzer"
 require "pause/redis/adapter"
+require 'pause/blocked_action'
 
 module Pause
   class PeriodCheck < Struct.new(:period_seconds, :max_allowed, :block_ttl)

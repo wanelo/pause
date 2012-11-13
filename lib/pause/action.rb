@@ -51,8 +51,12 @@ module Pause
       Pause.analyzer.increment(self, timestamp, count)
     end
 
-    def ok?(&block)
-      Pause.analyzer.check(self, &block)
+    def ok?
+      Pause.analyzer.check(self).nil?
+    end
+
+    def analyze
+      Pause.analyzer.check(self)
     end
 
     def self.tracked_identifiers
@@ -61,6 +65,10 @@ module Pause
 
     def self.blocked_identifiers
       Pause.analyzer.blocked_identifiers(self.class_scope)
+    end
+
+    def self.unblock_all
+      Pause.analyzer.adapter.delete_keys(self.class_scope)
     end
 
     def key

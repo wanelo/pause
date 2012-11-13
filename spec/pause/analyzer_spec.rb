@@ -48,16 +48,16 @@ describe Pause::Analyzer do
   end
 
   describe "#check" do
-    it "should return true if action is NOT blocked" do
-      analyzer.check(action).should be_true
+    it "should return nil if action is NOT blocked" do
+      analyzer.check(action).should be_nil
     end
 
-    it "should return false if action is blocked" do
+    it "should return blocked action if action is blocked" do
       Timecop.freeze Time.now do
         5.times do
           analyzer.increment(action)
         end
-        analyzer.check(action).should be_false
+        analyzer.check(action).should be_a(Pause::BlockedAction)
       end
     end
   end

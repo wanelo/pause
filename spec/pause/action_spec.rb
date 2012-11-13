@@ -65,6 +65,34 @@ describe Pause::Action do
     end
   end
 
+  describe "#analyze" do
+    context "action should not be blocked" do
+      it "returns nil" do
+        action.analyze.should be_nil
+      end
+    end
+
+    context "action should be blocked" do
+      it "returns a BlockedAction object" do
+        time = Time.now
+        blocked_action = nil
+
+        Timecop.freeze time do
+          7.times { action.increment! }
+          blocked_action = action.analyze
+        end
+
+        expected_blocked_action = Pause::BlockedAction.new(action, action.checks[0], 7, time.to_i)
+
+        blocked_action.should be_a(Pause::BlockedAction)
+        blocked_action.identifier.should == expected_blocked_action.identifier
+        blocked_action.sum.should == expected_blocked_action.sum
+        blocked_action.period_check.should == expected_blocked_action.period_check
+        blocked_action.timestamp.should == expected_blocked_action.timestamp
+      end
+    end
+  end
+
   describe "#tracked_identifiers" do
     it "should return all the identifiers tracked (but not blocked) so far" do
       action.increment!
@@ -88,6 +116,24 @@ describe Pause::Action do
 
       MyNotification.blocked_identifiers.should include(action.identifier)
       MyNotification.blocked_identifiers.should include(other_action.identifier)
+    end
+  end
+
+  describe "#unblock_all" do
+    it "should unblock all the identifiers for a scope" do
+      10.times { action.increment! }
+      other_action.increment!
+
+      action.ok?
+      other_action.ok?
+
+      MyNotification.tracked_identifiers.should include(action.identifier, other_action.identifier)
+      MyNotification.blocked_identifiers.should == [action.identifier]
+
+      MyNotification.unblock_all
+
+      MyNotification.blocked_identifiers.should be_empty
+      MyNotification.tracked_identifiers.should == [other_action.identifier]
     end
   end
 end

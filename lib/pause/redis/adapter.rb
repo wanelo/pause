@@ -47,6 +47,13 @@ module Pause
         keys(blocked_key(scope))
       end
 
+      def delete_keys(scope)
+        ids = blocked_keys(scope)
+        increment_keys = ids.map{ |key| white_key(scope, key) }
+        blocked_keys = ids.map{ |key| blocked_key(scope, key) }
+        redis.del (increment_keys + blocked_keys)
+      end
+
       private
 
       def redis
@@ -55,12 +62,12 @@ module Pause
                                     db:   Pause.config.redis_db)
       end
 
-      def white_key(key)
-        "i:#{key}"
+      def white_key(scope, key = nil)
+        ["i", scope, key].compact.join(':')
       end
 
-      def blocked_key(key)
-        "b:#{key}"
+      def blocked_key(scope, key = nil)
+        ["b", scope, key].compact.join(':')
       end
 
       def keys(key_scope)

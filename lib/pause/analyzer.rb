@@ -14,9 +14,8 @@ module Pause
       adapter.increment(action.key, timestamp, count)
     end
 
-    def check(action, &block)
-      analyze(action, &block)
-      !adapter.blocked?(action.key)
+    def check(action)
+      analyze(action)
     end
 
     def tracked_identifiers(scope)
@@ -29,7 +28,7 @@ module Pause
 
     private
 
-    def analyze(action, &block)
+    def analyze(action)
       timestamp = period_marker(Pause.config.resolution, Time.now.to_i)
       set = adapter.key_history(action.key)
       action.checks.each do |period_check|
@@ -39,12 +38,9 @@ module Pause
           sum += element.count
           if sum >= period_check.max_allowed
             adapter.block(action.key, period_check.block_ttl)
-
-            if block_given?
-              return block.call(period_check, sum)
-            end
-
-            return true
+            # Note that Time.now is different from period_marker(resolution, Time.now), which
+            # rounds down to the nearest (resolution) seconds
+            return Pause::BlockedAction.new(action, period_check, sum, Time.now.to_i)
           end
           sum
         end
