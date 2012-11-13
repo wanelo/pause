@@ -4,8 +4,10 @@ require 'timecop'
 describe Pause::Action do
   include Pause::Helper::Timing
 
-  class FollowPushNotification < Pause::Action
+  class MyNotification < Pause::Action
     scope "ipn:follow"
+    check 20, 5, 40
+    check 40, 7, 40
   end
 
   let(:resolution) { 10 }
@@ -18,12 +20,16 @@ describe Pause::Action do
     Pause.config.stub(:history).and_return(history)
   end
 
-  let(:action) { FollowPushNotification.new("1237612") }
+  let(:action) { MyNotification.new("1237612") }
+  let(:other_action) { MyNotification.new("1237613") }
 
   describe "#increment!" do
     it "should increment" do
-      Pause.analyzer.should_receive(:increment).with(action)
-      action.increment!
+      time = Time.now
+      Timecop.freeze time do
+        Pause.analyzer.should_receive(:increment).with(action, time.to_i, 1)
+        action.increment!
+      end
     end
   end
 
@@ -56,6 +62,32 @@ describe Pause::Action do
         action.increment!
         action.ok?.should be_false
       end
+    end
+  end
+
+  describe "#tracked_identifiers" do
+    it "should return all the identifiers tracked (but not blocked) so far" do
+      action.increment!
+      other_action.increment!
+
+      action.ok?
+      other_action.ok?
+
+      MyNotification.tracked_identifiers.should include(action.identifier)
+      MyNotification.tracked_identifiers.should include(other_action.identifier)
+    end
+  end
+
+  describe "#blocked_identifiers" do
+    it "should return all the identifiers blocked" do
+      action.increment!(Time.now.to_i, 100)
+      other_action.increment!(Time.now.to_i, 100)
+
+      action.ok?
+      other_action.ok?
+
+      MyNotification.blocked_identifiers.should include(action.identifier)
+      MyNotification.blocked_identifiers.should include(other_action.identifier)
     end
   end
 end

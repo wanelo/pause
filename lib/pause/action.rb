@@ -4,7 +4,7 @@ module Pause
 
     def initialize(identifier)
       @identifier = identifier
-      self.class.instance_variable_set(:@checks, []) unless self.class.instance_variable_get(:@checks)
+      self.class.checks = [] unless self.class.instance_variable_get(:@checks)
     end
 
     # Action subclasses should define their scope as follows
@@ -18,6 +18,7 @@ module Pause
     end
 
     def self.scope(scope_identifier = nil)
+      class_variable_set(:@@class_scope, scope_identifier)
       define_method(:scope) { scope_identifier }
     end
 
@@ -35,23 +36,41 @@ module Pause
     #
     def self.check(period_seconds, max_allowed, block_ttl)
       @checks ||= []
-      @checks << PeriodCheck.new(period_seconds, max_allowed, block_ttl)
+      @checks << Pause::PeriodCheck.new(period_seconds, max_allowed, block_ttl)
     end
 
     def checks
       self.class.instance_variable_get(:@checks)
     end
 
-    def increment!
-      Pause.analyzer.increment(self)
+    def self.checks=(period_checks)
+      @checks = period_checks
     end
 
-    def ok?
-      Pause.analyzer.check(self)
+    def increment!(timestamp = Time.now.to_i, count = 1)
+      Pause.analyzer.increment(self, timestamp, count)
+    end
+
+    def ok?(&block)
+      Pause.analyzer.check(self, &block)
+    end
+
+    def self.tracked_identifiers
+      Pause.analyzer.tracked_identifiers(self.class_scope)
+    end
+
+    def self.blocked_identifiers
+      Pause.analyzer.blocked_identifiers(self.class_scope)
     end
 
     def key
       "#{self.scope}:#{@identifier}"
+    end
+
+    private
+
+    def self.class_scope
+      class_variable_get:@@class_scope if class_variable_defined?(:@@class_scope)
     end
   end
 end

@@ -27,8 +27,7 @@ describe Pause::Analyzer do
   describe "#increment" do
     it "should increment an action" do
       time = Time.now
-      adapter.should_receive(:increment).with(action.key, time.to_i)
-      analyzer.should_receive(:analyze).with(action)
+      adapter.should_receive(:increment).with(action.key, time.to_i, 1)
       Timecop.freeze time do
         analyzer.increment(action)
       end
@@ -42,6 +41,7 @@ describe Pause::Analyzer do
       Timecop.freeze time do
         5.times do
           analyzer.increment(action)
+          analyzer.check(action)
         end
       end
     end

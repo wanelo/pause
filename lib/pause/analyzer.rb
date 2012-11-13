@@ -10,18 +10,26 @@ module Pause
       @adapter ||= Pause::Redis::Adapter.new(Pause.config)
     end
 
-    def increment(action, timestamp = Time.now.to_i)
-      adapter.increment(action.key, timestamp)
-      analyze(action)
+    def increment(action, timestamp = Time.now.to_i, count = 1)
+      adapter.increment(action.key, timestamp, count)
     end
 
-    def check(action)
+    def check(action, &block)
+      analyze(action, &block)
       !adapter.blocked?(action.key)
+    end
+
+    def tracked_identifiers(scope)
+      adapter.all_keys(scope)
+    end
+
+    def blocked_identifiers(scope)
+      adapter.blocked_keys(scope)
     end
 
     private
 
-    def analyze(action)
+    def analyze(action, &block)
       timestamp = period_marker(Pause.config.resolution, Time.now.to_i)
       set = adapter.key_history(action.key)
       action.checks.each do |period_check|
@@ -31,6 +39,11 @@ module Pause
           sum += element.count
           if sum >= period_check.max_allowed
             adapter.block(action.key, period_check.block_ttl)
+
+            if block_given?
+              return block.call(period_check, sum)
+            end
+
             return true
           end
           sum

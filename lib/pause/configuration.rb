@@ -4,6 +4,7 @@ module Pause
 
     def configure
       yield self
+      self
     end
 
     def redis_host

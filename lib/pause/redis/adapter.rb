@@ -39,6 +39,14 @@ module Pause
         !!redis.get(blocked_key(key))
       end
 
+      def all_keys(scope)
+        keys(white_key(scope))
+      end
+
+      def blocked_keys(scope)
+        keys(blocked_key(scope))
+      end
+
       private
 
       def redis
@@ -53,6 +61,12 @@ module Pause
 
       def blocked_key(key)
         "b:#{key}"
+      end
+
+      def keys(key_scope)
+        redis.keys("#{key_scope}:*").map do |key|
+          key.gsub(/^#{key_scope}:/, "")
+        end
       end
 
       def extract_set_elements(key)

@@ -5,7 +5,6 @@ require "pause/analyzer"
 require "pause/redis/adapter"
 
 module Pause
-
   class PeriodCheck < Struct.new(:period_seconds, :max_allowed, :block_ttl)
     def <=>(other)
       self.period_seconds <=> other.period_seconds
@@ -24,7 +23,7 @@ module Pause
     end
 
     def configure(&block)
-      @configuration ||= Pause::Configuration.new.configure(&block)
+      @configuration = Pause::Configuration.new.configure(&block)
     end
 
     def config
