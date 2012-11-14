@@ -111,7 +111,7 @@ end
 
 ## Contributing
 
-Interested in contributing? Awesome. Here's how.
+Want to make it better? Cool. Here's how:
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
