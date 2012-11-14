@@ -1,6 +1,6 @@
 # Pause
 
-Pause is a redis-backed rate-limiting client. Use it to track events, with
+Pause is a Redis-backed rate-limiting client. Use it to track events, with
 rules around how often they are allowed to occur within configured time checks.
 
 ## Installation
@@ -110,8 +110,10 @@ end
 
 ## Contributing
 
+Interested in contributing? Awesome. Here's how.
+
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+5. Create a new pull request
