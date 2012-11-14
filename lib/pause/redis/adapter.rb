@@ -54,6 +54,22 @@ module Pause
         redis.del (increment_keys + blocked_keys)
       end
 
+      def disable(scope)
+        redis.set("disabled:#{scope}", "1")
+      end
+
+      def enable(scope)
+        redis.del("disabled:#{scope}")
+      end
+
+      def disabled?(scope)
+        ! enabled?(scope)
+      end
+
+      def enabled?(scope)
+        redis.keys("disabled:#{scope}").first.nil?
+      end
+
       private
 
       def redis

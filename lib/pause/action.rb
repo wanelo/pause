@@ -56,10 +56,12 @@ module Pause
     end
 
     def ok?
+      return true if self.class.disabled?
       Pause.analyzer.check(self).nil?
     end
 
     def analyze
+      return nil if self.class.disabled?
       Pause.analyzer.check(self)
     end
 
@@ -77,6 +79,33 @@ module Pause
 
     def key
       "#{self.scope}:#{@identifier}"
+    end
+
+    # Actions can be globally disabled or re-enabled in a persistent
+    # way.
+    #
+    #   MyAction.disable
+    #   MyAction.enabled? => false
+    #   MyAction.disabled? => true
+    #
+    #   MyAction.enable
+    #   MyAction.enabled? => true
+    #   MyAction.disabled? => false
+    #
+    def self.enable
+      Pause.analyzer.adapter.enable(class_scope)
+    end
+
+    def self.disable
+      Pause.analyzer.adapter.disable(class_scope)
+    end
+
+    def self.enabled?
+      Pause.analyzer.adapter.enabled?(class_scope)
+    end
+
+    def self.disabled?
+      ! enabled?
     end
 
     private
