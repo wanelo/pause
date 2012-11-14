@@ -6,8 +6,10 @@
 
 guard 'rspec' do
   watch(%r{^spanx\.gemspec}) { "spec"}
-  watch(%r{^spec/.+_spec\.rb$})
   watch(%r{^lib/(.+)\.rb$}) { "spec" }
+
+  watch(%r{^spec/.+_spec\.rb$})
   watch('spec/spec_helper.rb')  { "spec" }
+  watch(%r{spec/support/.*}) { "spec" }
 end
 
