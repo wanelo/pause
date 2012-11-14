@@ -109,26 +109,26 @@ end
 If more data is needed about why the action is blocked, the `analyze` can be called
 
 ```ruby
-action = MyAction.new("thing")
+action = NotifyViaEmailAction.new("thing")
 
 while true
   action.increment!
 
-  blocked_action = action.analyze
-
-  if blocked_action
-    puts blocked_action.identifier
-    puts blocked_action.sum
-    puts blocked_action.timestamp
-
-    puts blocked_aciton.period_check.inspect
+  rate_limit_event = action.analyze
+  if rate_limit_event
+    puts rate_limit_event.identifier               # which key got blocked
+    puts rate_limit_event.sum                      # total count that triggered a rate limit
+    puts rate_limit_event.timestamp                # timestamp when rate limiting occured
+    puts rate_limit_event.period_check.inspect     # period check that triggered this rate limiting event
+  else
+    # not rate-limited, same as action.ok?
   end
 
   sleep 1
 end
 ```
 
-## Enabling/Disabling actions
+## Enabling/Disabling Actions
 
 Actions have a built-in way by which they can be disabled or enabled.
 
@@ -137,10 +137,13 @@ MyAction.disable
 MyAction.enable
 ```
 
-This is persisted to Redis, so state is not process-bound.
+This is persisted to Redis, so state is not process-bound, but shared across all ruby run-times using this
+action (assuming Redis store configuration is the same).
 
-When disabled, Pause does *not* check state in any of its methods. This is because adding extra Redis calls can
-be expensive in loops. You should check whether your action is enabled or disabled if it important.
+When disabled, Pause does *not* check state in any of its methods, so calls to increment! or ok? still work
+exactly as before. This is because adding extra Redis calls can be expensive in loops. You should check
+whether your action is enabled or disabled if it important to support enabling and disabling of rate limiting in
+your context.
 
 ```ruby
 while true
@@ -154,6 +157,7 @@ while true
 end
 ```
 
+
 ## Contributing
 
 Want to make it better? Cool. Here's how:
@@ -163,3 +167,11 @@ Want to make it better? Cool. Here's how:
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create a new pull request
+
+## Authors
+
+This gem was written by Eric Saxby, Atasay Gokkaya and Konstantin Gredeskoul at Wanelo, Inc.
+
+Please see the LICENSE.txt file for further details.
+
+
