@@ -99,7 +99,7 @@ end
 class OtherController < ApplicationController
   def index
     action = OtherAction.new(params[:thing])
-    if action.ok?
+    unless action.rate_limited?
       action.increment!(params[:count].to_i, Time.now.to_i)
     end
   end
@@ -125,6 +125,32 @@ while true
   end
 
   sleep 1
+end
+```
+
+## Enabling/Disabling actions
+
+Actions have a built-in way by which they can be disabled or enabled.
+
+```ruby
+MyAction.disable
+MyAction.enable
+```
+
+This is persisted to Redis, so state is not process-bound.
+
+When disabled, Pause does *not* check state in any of its methods. This is because adding extra Redis calls can
+be expensive in loops. You should check whether your action is enabled or disabled if it important.
+
+```ruby
+while true
+  if MyAction.enabled?
+    Thing.all.each do |thing|
+      action = MyAction.new(thing.name)
+      action.increment! unless action.rate_limited?
+    end
+  end
+  sleep 10
 end
 ```
 
