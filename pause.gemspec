@@ -6,8 +6,8 @@ require 'pause/version'
 Gem::Specification.new do |gem|
   gem.name          = "pause"
   gem.version       = Pause::VERSION
-  gem.authors       = ["Atasay Gokkaya", "Paul Henry"]
-  gem.email         = %w(atasay@wanelo.com paul@wanelo.com)
+  gem.authors       = ["Atasay Gokkaya", "Paul Henry", "Eric Saxny"]
+  gem.email         = %w(atasay@wanelo.com paul@wanelo.com sax@wanelo.com)
   gem.description   = %q(Real time redis rate limiting)
   gem.summary       = %q(Real time redis rate limiting)
   gem.homepage      = "https://github.com/wanelo/pause"
