@@ -39,6 +39,10 @@ module Pause
       @checks << Pause::PeriodCheck.new(period_seconds, max_allowed, block_ttl)
     end
 
+    def self.checks
+      @checks
+    end
+
     def checks
       self.class.instance_variable_get(:@checks)
     end
