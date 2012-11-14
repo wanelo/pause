@@ -1,6 +1,6 @@
 # Pause
 
-Pause is a Redis-backed rate-limiting client for Ruby. Use it to track events, with
+Pause is a Redis-backed rate-limiting client. Use it to track events, with
 rules around how often they are allowed to occur within configured time checks.
 
 ## Installation
