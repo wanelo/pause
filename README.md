@@ -22,6 +22,8 @@ Or install it yourself as:
 
 ## Usage
 
+### Configuration
+
 Configure Pause. This could be in a Rails initializer.
 
   * resolution - The time resolution (in seconds) defining the minimum period into which action counts are
@@ -40,26 +42,40 @@ Pause.configure do |config|
 end
 ```
 
-Define local actions for your application. These should define a scope, by
-which they are identified in the persistent store, and checks.
+### Actions
 
-Checks are configured with the following arguments:
+Define local actions for your application. Actions define a scope by
+which they are identified in the persistent store, and a set of checks.  Checks define various
+thresholds (`max_allowed`) against periods of time (`period_seconds`). When a threshold it triggered,
+the action is rate limited, and stays rate limited for the duration of `block_ttl` seconds.
 
-  * `period_seconds` - this is a period of time against which an action is tested
-  * `max_allowed` - the maximum number of times an action can be incremented during the time block determined by
-                  period seconds
-  * `block_ttl` - how long to mark an action as blocked if it goes over max-allowed
+#### Checks
 
-Note that you should not configure a check with `period_seconds` less than the minimum resolution set in the
-Pause config. If you do so, you will actually be checking sums against the full time period.
+Checks are configured with the following arguments (which can be passed as an array, or a symbol hash):
+
+  * `period_seconds` - time window this is a time period against which an action is tested
+  * `max_allowed` - the maximum number of times an action can be incremented during this particular time period before rate limiting is triggered.
+  * `block_ttl` - amount time (seconds) an action stays rate limited after threshold is reached.
+
+#### Scope
+
+Scope is simple string used to identify this action in the Redis store, and is appended to all keys.
+Therefore it is advised to keep scope as short as possible to reduce memory requirements of the store.
+
+#### Resolution
+
+Note that your resolution must be less than or equal to the smallest `period_seconds` value in your checks.
+In other words, if your shortest check is 1 minute, you could set resolution to 1 minute or smaller.
+
+#### Example
 
 ```ruby
 require 'pause'
 
 class FollowAction < Pause::Action
-  scope "ipn:follow"
-  check 600, 100, 300
-  check 3600, 200, 1200
+  scope "f"
+  check period_seconds:   60, max_allowed:  100, block_ttl: 3600
+  check period_seconds: 1800, max_allowed: 2000, block_ttl: 3600
 end
 ```
 
@@ -71,10 +87,11 @@ class FollowsController < ApplicationController
   def create
     action = FollowAction.new(user.id)
     if action.ok?
-      # do stuff
+      # do stuff!
       action.increment!
     else
-      # show errors
+      # action is rate limited, either skip
+      # or show error, depending on the context.
     end
   end
 end
@@ -83,7 +100,7 @@ class OtherController < ApplicationController
   def index
     action = OtherAction.new(params[:thing])
     if action.ok?
-      action.increment!(Time.now.to_i, params[:count].to_i)
+      action.increment!(params[:count].to_i, Time.now.to_i)
     end
   end
 end

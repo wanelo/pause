@@ -25,17 +25,23 @@ module Pause
     # Action subclasses should define their checks as follows
     #
     #  period_seconds - compare all activity by an identifier within the time period
-    #  max_allowed - if the number of actions by an identifier exceeds max_allowed for the time period marked
-    #                by period_seconds, it is no longer ok.
-    #  ttl - time to mark identifier as not ok
+    #  max_allowed    - if the number of actions by an identifier exceeds max_allowed for the time period marked
+    #                   by period_seconds, it is no longer ok.
+    #  block_ttl      - time to mark identifier as not ok
     #
     #     class MyAction < Pause::Action
-    #       check 10, 20, 30 # period_seconds, max_allowed, ttl
-    #       check 20, 30, 40 # period_seconds, max_allowed, ttl
+    #       check period_seconds: 60,   max_allowed: 100,  block_ttl: 3600
+    #       check period_seconds: 1800, max_allowed: 2000, block_ttl: 3600
     #     end
     #
-    def self.check(period_seconds, max_allowed, block_ttl)
+    def self.check(*args)
       @checks ||= []
+      period_seconds, max_allowed, block_ttl =
+        if args.first.is_a?(Hash)
+          [args.first[:period_seconds], args.first[:max_allowed], args.first[:block_ttl]]
+        else
+          args
+        end
       @checks << Pause::PeriodCheck.new(period_seconds, max_allowed, block_ttl)
     end
 
@@ -51,17 +57,19 @@ module Pause
       @checks = period_checks
     end
 
-    def increment!(timestamp = Time.now.to_i, count = 1)
+    def increment!(count = 1, timestamp = Time.now.to_i)
       Pause.analyzer.increment(self, timestamp, count)
     end
 
+    def rate_limited?
+      ! ok?
+    end
+
     def ok?
-      return true if self.class.disabled?
       Pause.analyzer.check(self).nil?
     end
 
     def analyze
-      return nil if self.class.disabled?
       Pause.analyzer.check(self)
     end
 
@@ -69,12 +77,12 @@ module Pause
       Pause.analyzer.tracked_identifiers(self.class_scope)
     end
 
-    def self.blocked_identifiers
-      Pause.analyzer.blocked_identifiers(self.class_scope)
+    def self.rate_limited_identifiers
+      Pause.analyzer.rate_limited_identifiers(self.class_scope)
     end
 
     def self.unblock_all
-      Pause.analyzer.adapter.delete_keys(self.class_scope)
+      Pause.analyzer.adapter.delete_rate_limited_keys(self.class_scope)
     end
 
     def key

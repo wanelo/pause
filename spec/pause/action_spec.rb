@@ -6,8 +6,8 @@ describe Pause::Action do
 
   class MyNotification < Pause::Action
     scope "ipn:follow"
-    check 20, 5, 40
-    check 40, 7, 40
+    check period_seconds: 20, max_allowed: 5, block_ttl: 40
+    check period_seconds: 40, max_allowed: 7, block_ttl: 40
   end
 
   let(:resolution) { 10 }
@@ -47,73 +47,45 @@ describe Pause::Action do
     end
 
     it "should successfully consider different period checks" do
-      time = period_marker(resolution, Time.now.to_i + 1)
+      time = period_marker(resolution, Time.now.to_i)
 
-      Timecop.freeze Time.at(time - 35) do
-        4.times do
-          action.increment!
-          action.ok?.should be_true
-        end
-      end
+      action.increment! 4, time - 25
+      action.ok?.should be_true
 
-      Timecop.freeze Time.at(time - 5) do
-        2.times do
-          action.increment!
-          action.ok?.should be_true
-        end
-        action.increment!
-        action.ok?.should be_false
-      end
-    end
+      action.increment! 2, time - 3
+      action.ok?.should be_true
 
-    context "action is disabled" do
+      action.increment! 1, time
 
-      it "should be true if action is disabled, even if blocked" do
-        10.times { action.increment! }
-        action.ok?.should be_false
+      action.ok?.should be_false
 
-        MyNotification.disable
-
-        action.ok?.should be_true
-      end
     end
   end
 
   describe "#analyze" do
-    context "action should not be blocked" do
+    context "action should not be rate limited" do
       it "returns nil" do
         action.analyze.should be_nil
       end
     end
 
-    context "action should be blocked" do
-      it "returns a BlockedAction object" do
+    context "action should be rate limited" do
+      it "returns a RateLimitedEvent object" do
         time = Time.now
-        blocked_action = nil
+        rate_limit = nil
 
         Timecop.freeze time do
           7.times { action.increment! }
-          blocked_action = action.analyze
+          rate_limit = action.analyze
         end
 
-        expected_blocked_action = Pause::BlockedAction.new(action, action.checks[0], 7, time.to_i)
+        expected_rate_limit = Pause::RateLimitedEvent.new(action, action.checks[0], 7, time.to_i)
 
-        blocked_action.should be_a(Pause::BlockedAction)
-        blocked_action.identifier.should == expected_blocked_action.identifier
-        blocked_action.sum.should == expected_blocked_action.sum
-        blocked_action.period_check.should == expected_blocked_action.period_check
-        blocked_action.timestamp.should == expected_blocked_action.timestamp
-      end
-    end
-
-    context "action is disabled" do
-      it "return nil, even if blocked" do
-        10.times { action.increment! }
-        action.should_not be_ok
-
-        MyNotification.disable
-
-        action.analyze.should be_nil
+        rate_limit.should be_a(Pause::RateLimitedEvent)
+        rate_limit.identifier.should == expected_rate_limit.identifier
+        rate_limit.sum.should == expected_rate_limit.sum
+        rate_limit.period_check.should == expected_rate_limit.period_check
+        rate_limit.timestamp.should == expected_rate_limit.timestamp
       end
     end
   end
@@ -131,16 +103,16 @@ describe Pause::Action do
     end
   end
 
-  describe "#blocked_identifiers" do
+  describe "#rate_limited_identifiers" do
     it "should return all the identifiers blocked" do
-      action.increment!(Time.now.to_i, 100)
-      other_action.increment!(Time.now.to_i, 100)
+      action.increment!(100, Time.now.to_i)
+      other_action.increment!(100, Time.now.to_i)
 
       action.ok?
       other_action.ok?
 
-      MyNotification.blocked_identifiers.should include(action.identifier)
-      MyNotification.blocked_identifiers.should include(other_action.identifier)
+      MyNotification.rate_limited_identifiers.should include(action.identifier)
+      MyNotification.rate_limited_identifiers.should include(other_action.identifier)
     end
   end
 
@@ -153,11 +125,11 @@ describe Pause::Action do
       other_action.ok?
 
       MyNotification.tracked_identifiers.should include(action.identifier, other_action.identifier)
-      MyNotification.blocked_identifiers.should == [action.identifier]
+      MyNotification.rate_limited_identifiers.should == [action.identifier]
 
       MyNotification.unblock_all
 
-      MyNotification.blocked_identifiers.should be_empty
+      MyNotification.rate_limited_identifiers.should be_empty
       MyNotification.tracked_identifiers.should == [other_action.identifier]
     end
   end
@@ -174,9 +146,13 @@ describe Pause::Action, ".check" do
     check 300, 150, 200
   end
 
+  class ActionWithHashChecks < Pause::Action
+    check period_seconds: 50, block_ttl: 60, max_allowed: 100
+  end
+
   it "should define a period check on new instances" do
     ActionWithCheck.new("id").checks.should == [
-        Pause::PeriodCheck.new(100, 150, 200),
+        Pause::PeriodCheck.new(100, 150, 200)
     ]
   end
 
@@ -185,6 +161,12 @@ describe Pause::Action, ".check" do
         Pause::PeriodCheck.new(100, 150, 200),
         Pause::PeriodCheck.new(200, 150, 200),
         Pause::PeriodCheck.new(300, 150, 200)
+    ]
+  end
+
+  it "should accept hash arguments" do
+    ActionWithHashChecks.new("id").checks.should == [
+        Pause::PeriodCheck.new(50, 100, 60)
     ]
   end
 

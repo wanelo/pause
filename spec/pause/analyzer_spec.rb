@@ -37,7 +37,7 @@ describe Pause::Analyzer do
   describe "#analyze" do
     it "checks and blocks if max_allowed is reached" do
       time = Time.now
-      adapter.should_receive(:block).once.with(action.key, 12)
+      adapter.should_receive(:rate_limit!).once.with(action.key, 12)
       Timecop.freeze time do
         5.times do
           analyzer.increment(action)
@@ -57,7 +57,7 @@ describe Pause::Analyzer do
         5.times do
           analyzer.increment(action)
         end
-        analyzer.check(action).should be_a(Pause::BlockedAction)
+        analyzer.check(action).should be_a(Pause::RateLimitedEvent)
       end
     end
   end

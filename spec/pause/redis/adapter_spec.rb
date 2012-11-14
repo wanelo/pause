@@ -53,7 +53,7 @@ describe Pause::Redis::Adapter do
     let(:ttl) { 110000 }
 
     it "saves ip to redis with expiration" do
-      adapter.block(key, ttl)
+      adapter.rate_limit!(key, ttl)
       redis_conn.get(blocked_key).should_not be_nil
       redis_conn.ttl(blocked_key).should == ttl
     end
@@ -65,8 +65,8 @@ describe Pause::Redis::Adapter do
     let(:ttl) { 110000 }
 
     it "should return true if blocked" do
-      adapter.block(key, ttl)
-      (!!redis_conn.get(blocked_key).should) == adapter.blocked?(key)
+      adapter.rate_limit!(key, ttl)
+      (!!redis_conn.get(blocked_key).should) == adapter.rate_limited?(key)
     end
   end
 

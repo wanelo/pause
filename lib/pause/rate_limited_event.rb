@@ -1,5 +1,5 @@
 module Pause
-  class BlockedAction
+  class RateLimitedEvent
     attr_accessor :action, :identifier, :period_check, :sum, :timestamp
 
     def initialize(action, period_check, sum, timestamp)

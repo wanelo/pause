@@ -1,9 +1,10 @@
+require 'redis'
 require "pause/version"
 require "pause/configuration"
 require "pause/action"
 require "pause/analyzer"
 require "pause/redis/adapter"
-require 'pause/blocked_action'
+require 'pause/rate_limited_event'
 
 module Pause
   class PeriodCheck < Struct.new(:period_seconds, :max_allowed, :block_ttl)

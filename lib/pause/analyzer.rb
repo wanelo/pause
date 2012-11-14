@@ -22,8 +22,8 @@ module Pause
       adapter.all_keys(scope)
     end
 
-    def blocked_identifiers(scope)
-      adapter.blocked_keys(scope)
+    def rate_limited_identifiers(scope)
+      adapter.rate_limited_keys(scope)
     end
 
     private
@@ -37,10 +37,10 @@ module Pause
           break if element.ts < start_time
           sum += element.count
           if sum >= period_check.max_allowed
-            adapter.block(action.key, period_check.block_ttl)
+            adapter.rate_limit!(action.key, period_check.block_ttl)
             # Note that Time.now is different from period_marker(resolution, Time.now), which
             # rounds down to the nearest (resolution) seconds
-            return Pause::BlockedAction.new(action, period_check, sum, Time.now.to_i)
+            return Pause::RateLimitedEvent.new(action, period_check, sum, Time.now.to_i)
           end
           sum
         end

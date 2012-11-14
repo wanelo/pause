@@ -31,27 +31,27 @@ module Pause
         extract_set_elements(white_key(key))
       end
 
-      def block(key, block_ttl)
-        redis.setex(blocked_key(key), block_ttl, nil)
+      def rate_limit!(key, block_ttl)
+        redis.setex(rate_limited_key(key), block_ttl, nil)
       end
 
-      def blocked?(key)
-        !!redis.get(blocked_key(key))
+      def rate_limited?(key)
+        !!redis.get(rate_limited_key(key))
       end
 
       def all_keys(scope)
         keys(white_key(scope))
       end
 
-      def blocked_keys(scope)
-        keys(blocked_key(scope))
+      def rate_limited_keys(scope)
+        keys(rate_limited_key(scope))
       end
 
-      def delete_keys(scope)
-        ids = blocked_keys(scope)
+      def delete_rate_limited_keys(scope)
+        ids = rate_limited_keys(scope)
         increment_keys = ids.map{ |key| white_key(scope, key) }
-        blocked_keys = ids.map{ |key| blocked_key(scope, key) }
-        redis.del (increment_keys + blocked_keys)
+        rate_limited_keys = ids.map{ |key| rate_limited_key(scope, key) }
+        redis.del (increment_keys + rate_limited_keys)
       end
 
       def disable(scope)
@@ -82,7 +82,7 @@ module Pause
         ["i", scope, key].compact.join(':')
       end
 
-      def blocked_key(scope, key = nil)
+      def rate_limited_key(scope, key = nil)
         ["b", scope, key].compact.join(':')
       end
 
