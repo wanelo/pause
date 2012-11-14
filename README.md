@@ -1,4 +1,5 @@
-# Pause
+Pause
+======
 
 Pause is a Redis-backed rate-limiting client. Use it to track events, with
 rules around how often they are allowed to occur within configured time checks.
