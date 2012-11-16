@@ -2,6 +2,8 @@ require 'pause/helper/timing'
 
 module Pause
   module Redis
+
+    # This class encapsulates Redis operations used by Pause
     class Adapter
 
       include Pause::Helper::Timing

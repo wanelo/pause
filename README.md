@@ -3,8 +3,14 @@ Pause
 
 [![Build status](https://secure.travis-ci.org/wanelo/pause.png)](http://travis-ci.org/wanelo/pause)
 
-Pause is a Redis-backed rate-limiting client. Use it to track events, with
+Pause is a flexible Redis-backed rate-limiting client. Use it to track events, with
 rules around how often they are allowed to occur within configured time checks.
+
+Because Pause is Redis-based, multiple ruby processes (even distributed across multiple servers) can track and report
+events together, and then query whether a particular identifier should be rate limited or not.
+
+Sample applications include IP-based blocking based on HTTP request volume (see related gem "spanx"),
+throttling push notifications as to not overwhelm the user with too much frequency, etc.
 
 ## Installation
 
@@ -36,16 +42,15 @@ Pause.configure do |config|
   config.redis_host = "127.0.0.1"
   config.redis_port = 6379
   config.redis_db   = 1
-
-  config.resolution = 600
-  config.history    = 86400
+  config.resolution = 600     # aggregate all events into 10 minute blocks
+  config.history    = 86400   # discard all events older than 1 day
 end
 ```
 
 ### Actions
 
 Define local actions for your application. Actions define a scope by
-which they are identified in the persistent store, and a set of checks.  Checks define various
+which they are identified in the persistent store (aka "namespace"), and a set of checks.  Checks define various
 thresholds (`max_allowed`) against periods of time (`period_seconds`). When a threshold it triggered,
 the action is rate limited, and stays rate limited for the duration of `block_ttl` seconds.
 
@@ -62,9 +67,16 @@ Checks are configured with the following arguments (which can be passed as an ar
 Scope is simple string used to identify this action in the Redis store, and is appended to all keys.
 Therefore it is advised to keep scope as short as possible to reduce memory requirements of the store.
 
+If you are using the same Redis store to rate limit multiple actions, you must ensure that each action
+has a unique scope.
+
 #### Resolution
 
-Note that your resolution must be less than or equal to the smallest `period_seconds` value in your checks.
+Resolution is the period of aggregation.  As events come in, Pause aggregates them in time blocks
+of this length.  If you set resolution to 10 minutes, all events arriving within a 10 minute block
+are aggregated.
+
+Resolution must be less than or equal to the smallest `period_seconds` value in your checks.
 In other words, if your shortest check is 1 minute, you could set resolution to 1 minute or smaller.
 
 #### Example
@@ -88,6 +100,7 @@ class FollowsController < ApplicationController
     action = FollowAction.new(user.id)
     if action.ok?
       # do stuff!
+      # and track it...
       action.increment!
     else
       # action is rate limited, either skip
@@ -100,6 +113,9 @@ class OtherController < ApplicationController
   def index
     action = OtherAction.new(params[:thing])
     unless action.rate_limited?
+      # perform business logic
+      ....
+      # track it
       action.increment!(params[:count].to_i, Time.now.to_i)
     end
   end
@@ -116,10 +132,10 @@ while true
 
   rate_limit_event = action.analyze
   if rate_limit_event
-    puts rate_limit_event.identifier               # which key got blocked
+    puts rate_limit_event.identifier               # which key got rate limited ("thing")
     puts rate_limit_event.sum                      # total count that triggered a rate limit
-    puts rate_limit_event.timestamp                # timestamp when rate limiting occured
-    puts rate_limit_event.period_check.inspect     # period check that triggered this rate limiting event
+    puts rate_limit_event.timestamp                # timestamp when rate limiting occurred
+    puts rate_limit_event.period_check             # period check object, that triggered this rate limiting event
   else
     # not rate-limited, same as action.ok?
   end
