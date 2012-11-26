@@ -60,6 +60,15 @@ describe Pause::Action do
       action.ok?.should be_false
 
     end
+
+    it "should return false and silently fail if redis is not available" do
+      Redis.any_instance.stub(:zrange) { raise Redis::CannotConnectError }
+      time = period_marker(resolution, Time.now.to_i)
+
+      action.increment! 4, time - 25
+
+      action.ok?.should be_false
+    end
   end
 
   describe "#analyze" do

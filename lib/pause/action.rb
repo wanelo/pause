@@ -67,6 +67,9 @@ module Pause
 
     def ok?
       Pause.analyzer.check(self).nil?
+    rescue ::Redis::CannotConnectError => e
+      $stderr.puts "Error connecting to redis: #{e.inspect}"
+      false
     end
 
     def analyze
