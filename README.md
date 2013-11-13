@@ -1,6 +1,7 @@
 Pause
 ======
 
+[![Gem Version](https://badge.fury.io/rb/pause.png)](http://badge.fury.io/rb/pause)
 [![Build status](https://secure.travis-ci.org/wanelo/pause.png)](http://travis-ci.org/wanelo/pause)
 
 Pause is a flexible Redis-backed rate-limiting client. Use it to track events, with
