@@ -4,31 +4,7 @@ module Pause
   class Analyzer
     include Pause::Helper::Timing
 
-    attr_accessor :adapter
-
-    def initialize
-      @adapter ||= Pause::Redis::Adapter.new(Pause.config)
-    end
-
-    def increment(action, timestamp = Time.now.to_i, count = 1)
-      adapter.increment(action.key, timestamp, count)
-    end
-
     def check(action)
-      analyze(action)
-    end
-
-    def tracked_identifiers(scope)
-      adapter.all_keys(scope)
-    end
-
-    def rate_limited_identifiers(scope)
-      adapter.rate_limited_keys(scope)
-    end
-
-    private
-
-    def analyze(action)
       timestamp = period_marker(Pause.config.resolution, Time.now.to_i)
       set = adapter.key_history(action.key)
       action.checks.each do |period_check|
@@ -48,5 +24,10 @@ module Pause
       nil
     end
 
+    private
+
+    def adapter
+      Pause.adapter
+    end
   end
 end

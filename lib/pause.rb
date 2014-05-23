@@ -24,6 +24,10 @@ module Pause
       @analyzer ||= Pause::Analyzer.new
     end
 
+    def adapter
+      @adapter ||= Pause::Redis::Adapter.new(config)
+    end
+
     def configure(&block)
       @configuration = Pause::Configuration.new.configure(&block)
     end

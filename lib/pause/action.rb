@@ -50,7 +50,7 @@ module Pause
     end
 
     def checks
-      self.class.instance_variable_get(:@checks)
+      self.class.checks
     end
 
     def self.checks=(period_checks)
@@ -58,7 +58,7 @@ module Pause
     end
 
     def increment!(count = 1, timestamp = Time.now.to_i)
-      Pause.analyzer.increment(self, timestamp, count)
+      adapter.increment(key, timestamp, count)
     end
 
     def rate_limited?
@@ -77,19 +77,23 @@ module Pause
     end
 
     def self.tracked_identifiers
-      Pause.analyzer.tracked_identifiers(self.class_scope)
+      adapter.all_keys(self.class_scope)
     end
 
     def self.rate_limited_identifiers
-      Pause.analyzer.rate_limited_identifiers(self.class_scope)
+      adapter.rate_limited_keys(self.class_scope)
     end
 
     def self.unblock_all
-      Pause.analyzer.adapter.delete_rate_limited_keys(self.class_scope)
+      adapter.delete_rate_limited_keys(self.class_scope)
+    end
+
+    def unblock
+      adapter.delete_rate_limited_key(scope, identifier)
     end
 
     def key
-      "#{self.scope}:#{@identifier}"
+      "#{self.scope}:#{identifier}"
     end
 
     # Actions can be globally disabled or re-enabled in a persistent
@@ -104,15 +108,15 @@ module Pause
     #   MyAction.disabled? => false
     #
     def self.enable
-      Pause.analyzer.adapter.enable(class_scope)
+      adapter.enable(class_scope)
     end
 
     def self.disable
-      Pause.analyzer.adapter.disable(class_scope)
+      adapter.disable(class_scope)
     end
 
     def self.enabled?
-      Pause.analyzer.adapter.enabled?(class_scope)
+      adapter.enabled?(class_scope)
     end
 
     def self.disabled?
@@ -120,6 +124,14 @@ module Pause
     end
 
     private
+
+    def self.adapter
+      Pause.adapter
+    end
+
+    def adapter
+      self.class.adapter
+    end
 
     def self.class_scope
       class_variable_get:@@class_scope if class_variable_defined?(:@@class_scope)

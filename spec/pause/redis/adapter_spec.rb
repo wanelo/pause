@@ -12,6 +12,7 @@ describe Pause::Redis::Adapter do
     Pause.stub(:config).and_return(configuration)
     Pause.config.stub(:resolution).and_return(resolution)
     Pause.config.stub(:history).and_return(history)
+    redis_conn.flushall
   end
 
   let(:adapter) { Pause::Redis::Adapter.new(Pause.config) }
@@ -73,6 +74,61 @@ describe Pause::Redis::Adapter do
   describe "#white_key" do
     it "prefixes key" do
       adapter.send(:white_key, "abc").should == "i:abc"
+    end
+  end
+
+  describe '#enable' do
+    it 'deletes the disabled flag in redis' do
+      adapter.disable("boom")
+      expect(adapter.disabled?("boom")).to be_true
+      adapter.enable("boom")
+      expect(adapter.disabled?("boom")).to be_false
+    end
+  end
+
+  describe '#disable' do
+    it 'sets the disabled flag in redis' do
+      expect(adapter.enabled?("boom")).to be_true
+      adapter.disable("boom")
+      expect(adapter.enabled?("boom")).to be_false
+    end
+  end
+
+  describe '#rate_limit!' do
+    it 'rate limits a key for a specific ttl' do
+      expect(adapter.rate_limited?('1')).to be_false
+      adapter.rate_limit!('1', 10)
+      expect(adapter.rate_limited?('1')).to be_true
+    end
+  end
+
+  describe '#delete_rate_limited_keys' do
+    it 'calls redis del with all keys' do
+      adapter.rate_limit!('boom:1', 10)
+      adapter.rate_limit!('boom:2', 10)
+
+      expect(adapter.rate_limited?('boom:1')).to be_true
+      expect(adapter.rate_limited?('boom:2')).to be_true
+
+      adapter.delete_rate_limited_keys('boom')
+
+      expect(adapter.rate_limited?('boom:1')).to be_false
+      expect(adapter.rate_limited?('boom:2')).to be_false
+    end
+  end
+
+  describe '#delete_rate_limit_key' do
+    it 'calls redis del with all keys' do
+      adapter.rate_limit!('boom:1', 10)
+      adapter.rate_limit!('boom:2', 10)
+
+      expect(adapter.rate_limited?('boom:1')).to be_true
+      expect(adapter.rate_limited?('boom:2')).to be_true
+
+      adapter.delete_rate_limited_key('boom', '1')
+
+      expect(adapter.rate_limited?('boom:1')).to be_false
+      expect(adapter.rate_limited?('boom:2')).to be_true
     end
   end
 end

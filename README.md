@@ -174,6 +174,29 @@ while true
 end
 ```
 
+## Unblocking
+
+Actions can be unblocked manually after they have been blocked.
+
+To unblock all blocked identifiers for a single action:
+
+```ruby
+MyAction.unblock_all
+```
+
+To unblock a single identifier for an action:
+
+```ruby
+action = MyAction.new('hello')
+
+action.ok?
+# => false
+
+action.unblock
+
+action.ok?
+# => true
+```
 
 ## Contributing
 

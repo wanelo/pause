@@ -21,18 +21,8 @@ describe Pause::Analyzer do
   end
 
   let(:analyzer) { Pause.analyzer }
-  let(:adapter) { Pause.analyzer.adapter }
+  let(:adapter) { Pause.adapter }
   let(:action) { FollowPushNotification.new("1243123") }
-
-  describe "#increment" do
-    it "should increment an action" do
-      time = Time.now
-      adapter.should_receive(:increment).with(action.key, time.to_i, 1)
-      Timecop.freeze time do
-        analyzer.increment(action)
-      end
-    end
-  end
 
   describe "#analyze" do
     it "checks and blocks if max_allowed is reached" do
@@ -40,7 +30,7 @@ describe Pause::Analyzer do
       adapter.should_receive(:rate_limit!).once.with(action.key, 12)
       Timecop.freeze time do
         5.times do
-          analyzer.increment(action)
+          action.increment!
           analyzer.check(action)
         end
       end
@@ -55,7 +45,7 @@ describe Pause::Analyzer do
     it "should return blocked action if action is blocked" do
       Timecop.freeze Time.now do
         5.times do
-          analyzer.increment(action)
+          action.increment!
         end
         analyzer.check(action).should be_a(Pause::RateLimitedEvent)
       end

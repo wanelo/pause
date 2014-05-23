@@ -27,7 +27,7 @@ describe Pause::Action do
     it "should increment" do
       time = Time.now
       Timecop.freeze time do
-        Pause.analyzer.should_receive(:increment).with(action, time.to_i, 1)
+        Pause.adapter.should_receive(:increment).with(action.key, time.to_i, 1)
         action.increment!
       end
     end
@@ -58,7 +58,6 @@ describe Pause::Action do
       action.increment! 1, time
 
       action.ok?.should be_false
-
     end
 
     it "should return false and silently fail if redis is not available" do
@@ -99,7 +98,7 @@ describe Pause::Action do
     end
   end
 
-  describe "#tracked_identifiers" do
+  describe ".tracked_identifiers" do
     it "should return all the identifiers tracked (but not blocked) so far" do
       action.increment!
       other_action.increment!
@@ -112,7 +111,7 @@ describe Pause::Action do
     end
   end
 
-  describe "#rate_limited_identifiers" do
+  describe ".rate_limited_identifiers" do
     it "should return all the identifiers blocked" do
       action.increment!(100, Time.now.to_i)
       other_action.increment!(100, Time.now.to_i)
@@ -125,7 +124,7 @@ describe Pause::Action do
     end
   end
 
-  describe "#unblock_all" do
+  describe ".unblock_all" do
     it "should unblock all the identifiers for a scope" do
       10.times { action.increment! }
       other_action.increment!
@@ -140,6 +139,18 @@ describe Pause::Action do
 
       MyNotification.rate_limited_identifiers.should be_empty
       MyNotification.tracked_identifiers.should == [other_action.identifier]
+    end
+  end
+
+  describe "#unblock" do
+    it 'unblocks the specified id' do
+      10.times { action.increment! }
+
+      expect(action.ok?).to be_false
+
+      action.unblock
+
+      expect(action.ok?).to be_true
     end
   end
 end

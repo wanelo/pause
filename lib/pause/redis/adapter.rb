@@ -50,10 +50,11 @@ module Pause
       end
 
       def delete_rate_limited_keys(scope)
-        ids = rate_limited_keys(scope)
-        increment_keys = ids.map{ |key| white_key(scope, key) }
-        rate_limited_keys = ids.map{ |key| rate_limited_key(scope, key) }
-        redis.del (increment_keys + rate_limited_keys)
+        delete_rate_limited_ids scope, rate_limited_keys(scope)
+      end
+
+      def delete_rate_limited_key(scope, id)
+        delete_rate_limited_ids scope, [id]
       end
 
       def disable(scope)
@@ -73,6 +74,12 @@ module Pause
       end
 
       private
+
+      def delete_rate_limited_ids(scope, ids)
+        increment_keys = ids.map{ |key| white_key(scope, key) }
+        rate_limited_keys = ids.map{ |key| rate_limited_key(scope, key) }
+        redis.del(increment_keys + rate_limited_keys)
+      end
 
       def redis
         @redis_conn ||= ::Redis.new(host: Pause.config.redis_host,
