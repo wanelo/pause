@@ -5,6 +5,6 @@ script: "bundle exec rspec"
 notifications:
   email:
     recipients:
-      - dev@wanelo.com
+      - dev-info@wanelo.com
     on_success: never
     on_failure: always
