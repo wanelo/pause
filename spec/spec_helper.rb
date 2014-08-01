@@ -24,5 +24,6 @@ RSpec.configure do |config|
 
   config.before :each do
     Redis.new.flushall
+    Pause.instance_variable_set(:@adapter, nil)
   end
 end
