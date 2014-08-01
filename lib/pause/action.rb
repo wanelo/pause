@@ -68,7 +68,6 @@ module Pause
     def ok?
       !Pause.adapter.rate_limited?(key) && Pause.analyzer.check(self).nil?
     rescue ::Redis::CannotConnectError => e
-      $stderr.puts "Error connecting to redis: #{e.inspect}"
       false
     end
 
