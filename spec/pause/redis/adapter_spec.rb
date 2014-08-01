@@ -9,8 +9,9 @@ describe Pause::Redis::Adapter do
   let(:configuration) { Pause::Configuration.new }
 
   before do
-    Pause.config.stub(:resolution).and_return(resolution)
-    Pause.config.stub(:history).and_return(history)
+    allow(Pause).to receive(:config).and_return(configuration)
+    allow(Pause.config).to receive(:resolution).and_return(resolution)
+    allow(Pause.config).to receive(:history).and_return(history)
     redis_conn.flushall
   end
 
@@ -23,14 +24,14 @@ describe Pause::Redis::Adapter do
     it "should add key to a redis set" do
       adapter.increment(key, Time.now.to_i)
       set = redis_conn.zrange(adapter.send(:white_key, key), 0, -1, :with_scores => true)
-      set.should_not be_empty
-      set.size.should eql(1)
-      set[0].size.should eql(2)
+      expect(set).to_not be_empty
+      expect(set.size).to eql(1)
+      expect(set[0].size).to eql(2)
     end
 
     it "should remove old key from a redis set" do
       time = Time.now
-      redis_conn.should_receive(:zrem).with(adapter.send(:white_key, key), [adapter.period_marker(resolution, time)])
+      expect(redis_conn).to receive(:zrem).with(adapter.send(:white_key, key), [adapter.period_marker(resolution, time)])
 
       adapter.time_blocks_to_keep = 1
       Timecop.freeze time do
@@ -42,7 +43,7 @@ describe Pause::Redis::Adapter do
     end
 
     it "sets expiry on key" do
-      redis_conn.should_receive(:expire).with(adapter.send(:white_key, key), history)
+      expect(redis_conn).to receive(:expire).with(adapter.send(:white_key, key), history)
       adapter.increment(key, Time.now.to_i)
     end
   end
@@ -54,8 +55,8 @@ describe Pause::Redis::Adapter do
 
     it "saves ip to redis with expiration" do
       adapter.rate_limit!(key, ttl)
-      redis_conn.get(blocked_key).should_not be_nil
-      redis_conn.ttl(blocked_key).should == ttl
+      expect(redis_conn.get(blocked_key)).to_not be_nil
+      expect(redis_conn.ttl(blocked_key)).to eq(ttl)
     end
   end
 
@@ -66,38 +67,38 @@ describe Pause::Redis::Adapter do
 
     it "should return true if blocked" do
       adapter.rate_limit!(key, ttl)
-      (!!redis_conn.get(blocked_key).should) == adapter.rate_limited?(key)
+      expect(redis_conn.get(blocked_key) ? true : false).to eq(adapter.rate_limited?(key))
     end
   end
 
   describe "#white_key" do
     it "prefixes key" do
-      adapter.send(:white_key, "abc").should == "i:abc"
+      expect(adapter.send(:white_key, "abc")).to eq("i:abc")
     end
   end
 
   describe '#enable' do
     it 'deletes the disabled flag in redis' do
       adapter.disable("boom")
-      expect(adapter.disabled?("boom")).to be_true
+      expect(adapter.disabled?("boom")).to eq(true)
       adapter.enable("boom")
-      expect(adapter.disabled?("boom")).to be_false
+      expect(adapter.disabled?("boom")).to eq(false)
     end
   end
 
   describe '#disable' do
     it 'sets the disabled flag in redis' do
-      expect(adapter.enabled?("boom")).to be_true
+      expect(adapter.enabled?("boom")).to eq(true)
       adapter.disable("boom")
-      expect(adapter.enabled?("boom")).to be_false
+      expect(adapter.enabled?("boom")).to eq(false)
     end
   end
 
   describe '#rate_limit!' do
     it 'rate limits a key for a specific ttl' do
-      expect(adapter.rate_limited?('1')).to be_false
+      expect(adapter.rate_limited?('1')).to eq(false)
       adapter.rate_limit!('1', 10)
-      expect(adapter.rate_limited?('1')).to be_true
+      expect(adapter.rate_limited?('1')).to eq(true)
     end
   end
 
@@ -106,13 +107,13 @@ describe Pause::Redis::Adapter do
       adapter.rate_limit!('boom:1', 10)
       adapter.rate_limit!('boom:2', 10)
 
-      expect(adapter.rate_limited?('boom:1')).to be_true
-      expect(adapter.rate_limited?('boom:2')).to be_true
+      expect(adapter.rate_limited?('boom:1')).to eq(true)
+      expect(adapter.rate_limited?('boom:2')).to eq(true)
 
       adapter.delete_rate_limited_keys('boom')
 
-      expect(adapter.rate_limited?('boom:1')).to be_false
-      expect(adapter.rate_limited?('boom:2')).to be_false
+      expect(adapter.rate_limited?('boom:1')).to eq(false)
+      expect(adapter.rate_limited?('boom:2')).to eq(false)
     end
   end
 
@@ -121,13 +122,13 @@ describe Pause::Redis::Adapter do
       adapter.rate_limit!('boom:1', 10)
       adapter.rate_limit!('boom:2', 10)
 
-      expect(adapter.rate_limited?('boom:1')).to be_true
-      expect(adapter.rate_limited?('boom:2')).to be_true
+      expect(adapter.rate_limited?('boom:1')).to eq(true)
+      expect(adapter.rate_limited?('boom:2')).to eq(true)
 
       adapter.delete_rate_limited_key('boom', '1')
 
-      expect(adapter.rate_limited?('boom:1')).to be_false
-      expect(adapter.rate_limited?('boom:2')).to be_true
+      expect(adapter.rate_limited?('boom:1')).to eq(false)
+      expect(adapter.rate_limited?('boom:2')).to eq(true)
     end
   end
 end

@@ -14,12 +14,12 @@ describe Pause::Configuration, "#configure" do
       c.history = 6000
     end
 
-    subject.redis_host.should == "128.23.12.8"
-    subject.redis_port.should == 2134
-    subject.redis_db.should == "13"
+    expect(subject.redis_host).to eq("128.23.12.8")
+    expect(subject.redis_port).to eq(2134)
+    expect(subject.redis_db).to eq("13")
 
-    subject.resolution.should == 5000
-    subject.history.should == 6000
+    expect(subject.resolution).to eq(5000)
+    expect(subject.history).to eq(6000)
   end
 
   it "should provide redis defaults" do
@@ -27,10 +27,10 @@ describe Pause::Configuration, "#configure" do
       # do nothing
     end
 
-    subject.redis_host.should == "127.0.0.1"
-    subject.redis_port.should == 6379
-    subject.redis_db.should == "1"
-    subject.resolution.should == 600 # 10 minutes
-    subject.history.should == 86400 # one day
+    expect(subject.redis_host).to eq("127.0.0.1")
+    expect(subject.redis_port).to eq(6379)
+    expect(subject.redis_db).to eq("1")
+    expect(subject.resolution).to eq(600) # 10 minutes
+    expect(subject.history).to eq(86400) # one day
   end
 end

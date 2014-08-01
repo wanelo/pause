@@ -5,7 +5,7 @@ describe Pause::Analyzer do
   include Pause::Helper::Timing
 
   class FollowPushNotification < Pause::Action
-    scope "ipn:follow"
+    scope "ipn:followpn"
     check 20, 5, 12
     check 40, 7, 12
   end
@@ -32,7 +32,7 @@ describe Pause::Analyzer do
   describe "#analyze" do
     it "checks and blocks if max_allowed is reached" do
       time = Time.now
-      adapter.should_receive(:rate_limit!).once.with(action.key, 12)
+      expect(adapter).to receive(:rate_limit!).once.with(action.key, 12)
       Timecop.freeze time do
         5.times do
           action.increment!
@@ -45,7 +45,7 @@ describe Pause::Analyzer do
       let(:action) { UberSimpleCheck.new("1243123") }
 
       it "blocks only for the amount of time until an action would be allowed again" do
-        adapter.should_receive(:rate_limit!).once.with(action.key, 3)
+        expect(adapter).to receive(:rate_limit!).once.with(action.key, 3)
 
         now = Time.now.to_i
 
@@ -71,7 +71,7 @@ describe Pause::Analyzer do
       let(:action) { UberSimpleCheck.new("1243123") }
 
       it "blocks for a period appropriate to when the limit was exceeded" do
-        adapter.should_receive(:rate_limit!).once.with(action.key, 5)
+        expect(adapter).to receive(:rate_limit!).once.with(action.key, 5)
 
         now = Time.now.to_i
 
@@ -96,7 +96,7 @@ describe Pause::Analyzer do
 
   describe "#check" do
     it "should return nil if action is NOT blocked" do
-      analyzer.check(action).should be_nil
+      expect(analyzer.check(action)).to be_nil
     end
 
     it "should return blocked action if action is blocked" do
@@ -104,7 +104,7 @@ describe Pause::Analyzer do
         5.times do
           action.increment!
         end
-        analyzer.check(action).should be_a(Pause::RateLimitedEvent)
+        expect(analyzer.check(action)).to be_a(Pause::RateLimitedEvent)
       end
     end
   end
