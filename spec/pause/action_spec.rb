@@ -15,9 +15,9 @@ describe Pause::Action do
   let(:configuration) { Pause::Configuration.new }
 
   before do
-    Pause.stub(:config).and_return(configuration)
-    Pause.config.stub(:resolution).and_return(resolution)
-    Pause.config.stub(:history).and_return(history)
+    allow(Pause).to receive(:config).and_return(configuration)
+    allow(configuration).to receive(:resolution).and_return(resolution)
+    allow(configuration).to receive(:history).and_return(history)
   end
 
   let(:action) { MyNotification.new("1237612") }
@@ -47,17 +47,26 @@ describe Pause::Action do
     end
 
     it "should successfully consider different period checks" do
-      time = period_marker(resolution, Time.now.to_i)
+      time = Time.now.to_i
 
-      action.increment! 4, time - 25
-      action.ok?.should be_true
+      puts "incrementing by 4"
+      Timecop.freeze time - 25 do
+        action.increment! 4
+        action.ok?.should be_true
+      end
 
-      action.increment! 2, time - 3
-      action.ok?.should be_true
+      Timecop.freeze time - 3 do
+        puts "incrementing by 2"
+        action.increment! 2
+        action.ok?.should be_true
+      end
 
-      action.increment! 1, time
+      Timecop.freeze time do
+        puts "incrementing by 1"
+        action.increment! 1
 
-      action.ok?.should be_false
+        action.ok?.should be_false
+      end
     end
 
     it "should return false and silently fail if redis is not available" do
@@ -217,11 +226,12 @@ describe Pause::Action, "enabled/disabled states" do
     check 10, 0, 10
   end
 
+  let(:configuration) { Pause::Configuration.new }
+
   before do
-    Pause.configure do |c|
-      c.resolution = 10
-      c.history = 10
-    end
+    allow(Pause).to receive(:config).and_return(configuration)
+    allow(Pause.config).to receive(:resolution).and_return(10)
+    allow(Pause.config).to receive(:history).and_return(10)
   end
 
   let(:action) { BlockedAction }

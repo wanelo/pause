@@ -10,14 +10,19 @@ describe Pause::Analyzer do
     check 40, 7, 12
   end
 
-  let(:resolution) { 10 }
+  class UberSimpleCheck < Pause::Action
+    scope "usc"
+    check period_seconds: 10, max_allowed: 3
+  end
+
+  let(:resolution) { 1 }
   let(:history) { 60 }
   let(:configuration) { Pause::Configuration.new }
 
   before do
-    Pause.stub(:config).and_return(configuration)
-    Pause.config.stub(:resolution).and_return(resolution)
-    Pause.config.stub(:history).and_return(history)
+    allow(Pause).to receive(:config).and_return(configuration)
+    allow(Pause.config).to receive(:resolution).and_return(resolution)
+    allow(Pause.config).to receive(:history).and_return(history)
   end
 
   let(:analyzer) { Pause.analyzer }
@@ -31,6 +36,58 @@ describe Pause::Analyzer do
       Timecop.freeze time do
         5.times do
           action.increment!
+          analyzer.check(action)
+        end
+      end
+    end
+
+    context "checks without block_ttl" do
+      let(:action) { UberSimpleCheck.new("1243123") }
+
+      it "blocks only for the amount of time until an action would be allowed again" do
+        adapter.should_receive(:rate_limit!).once.with(action.key, 3)
+
+        now = Time.now.to_i
+
+        Timecop.freeze now - 10 do
+          action.increment!
+        end
+
+        Timecop.freeze now - 5 do
+          action.increment!
+        end
+
+        Timecop.freeze now - 3 do
+          action.increment!
+        end
+
+        Timecop.freeze now do
+          analyzer.check(action)
+        end
+      end
+    end
+
+    context "with a set element with a higher count" do
+      let(:action) { UberSimpleCheck.new("1243123") }
+
+      it "blocks for a period appropriate to when the limit was exceeded" do
+        adapter.should_receive(:rate_limit!).once.with(action.key, 5)
+
+        now = Time.now.to_i
+
+        Timecop.freeze now - 10 do
+          action.increment!
+        end
+
+        Timecop.freeze now - 5 do
+          action.increment!(2)
+        end
+
+        Timecop.freeze now - 3 do
+          action.increment!
+        end
+
+        Timecop.freeze now do
           analyzer.check(action)
         end
       end
