@@ -51,7 +51,6 @@ module Pause
                     PeriodTTLChecker.new(period_check, timestamp, set, action)
                   end
 
-        puts checker.inspect
         result = checker.check
         return result if result
       end
