@@ -173,22 +173,22 @@ describe Pause::Action, ".check" do
 
   it "should define a period check on new instances" do
     expect(ActionWithCheck.new("id").checks).to eq([
-        Pause::PeriodCheck.new(100, 150, 200)
-    ])
+          Pause::PeriodCheck.new(100, 150, 200)
+        ])
   end
 
   it "should define a period check on new instances" do
     expect(ActionWithMultipleChecks.new("id").checks).to eq([
-        Pause::PeriodCheck.new(100, 150, 200),
-        Pause::PeriodCheck.new(200, 150, 200),
-        Pause::PeriodCheck.new(300, 150, 200)
-    ])
+          Pause::PeriodCheck.new(100, 150, 200),
+          Pause::PeriodCheck.new(200, 150, 200),
+          Pause::PeriodCheck.new(300, 150, 200)
+        ])
   end
 
   it "should accept hash arguments" do
     expect(ActionWithHashChecks.new("id").checks).to eq([
-        Pause::PeriodCheck.new(50, 100, 60)
-    ])
+          Pause::PeriodCheck.new(50, 100, 60)
+        ])
   end
 
 end
