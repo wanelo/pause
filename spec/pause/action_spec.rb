@@ -18,6 +18,7 @@ describe Pause::Action do
     allow(Pause).to receive(:config).and_return(configuration)
     allow(Pause.config).to receive(:resolution).and_return(resolution)
     allow(Pause.config).to receive(:history).and_return(history)
+    allow(Pause).to receive(:adapter).and_return(Pause::Redis::Adapter.new(Pause.config))
   end
 
   let(:action) { MyNotification.new("1237612") }
@@ -47,17 +48,22 @@ describe Pause::Action do
     end
 
     it "should successfully consider different period checks" do
-      time = period_marker(resolution, Time.now.to_i)
+      time = Time.parse('Sept 22, 11:34:00')
 
-      action.increment! 4, time - 25
-      expect(action.ok?).to be true
+      Timecop.freeze time - 30 do
+        action.increment! 4
+        expect(action.ok?).to be true
+      end
 
-      action.increment! 2, time - 3
-      expect(action.ok?).to be true
+      Timecop.freeze time do
+        action.increment! 2
+        expect(action.ok?).to be true
+      end
 
-      action.increment! 1, time
-
-      expect(action.ok?).to be false
+      Timecop.freeze time do
+        action.increment! 1
+        expect(action.ok?).to be false
+      end
     end
 
     it "should return false and silently fail if redis is not available" do
