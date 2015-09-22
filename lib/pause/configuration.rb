@@ -1,6 +1,6 @@
 module Pause
   class Configuration
-    attr_writer :redis_host, :redis_port, :redis_db, :resolution, :history
+    attr_writer :redis_host, :redis_port, :redis_db, :resolution, :history, :sharded
 
     def configure
       yield self
@@ -25,6 +25,10 @@ module Pause
 
     def history
       (@history || 86400).to_i
+    end
+
+    def sharded
+      @sharded || false
     end
   end
 end

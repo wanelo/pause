@@ -5,6 +5,7 @@ require 'pause/action'
 require 'pause/analyzer'
 require 'pause/logger'
 require 'pause/redis/adapter'
+require 'pause/redis/sharded_adapter'
 require 'pause/rate_limited_event'
 
 module Pause
@@ -26,7 +27,13 @@ module Pause
     end
 
     def adapter
-      @adapter ||= Pause::Redis::Adapter.new(config)
+      @adapter ||= config.sharded ?
+        Pause::Redis::ShardedAdapter.new(config) :
+        Pause::Redis::Adapter.new(config)
+    end
+
+    def adapter=(adapter)
+      @adapter = adapter
     end
 
     def configure(&block)
