@@ -1,9 +1,10 @@
 require 'redis'
-require "pause/version"
-require "pause/configuration"
-require "pause/action"
-require "pause/analyzer"
-require "pause/redis/adapter"
+require 'pause/version'
+require 'pause/configuration'
+require 'pause/action'
+require 'pause/analyzer'
+require 'pause/logger'
+require 'pause/redis/adapter'
 require 'pause/rate_limited_event'
 
 module Pause

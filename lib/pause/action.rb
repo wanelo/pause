@@ -68,7 +68,7 @@ module Pause
     def ok?
       Pause.analyzer.check(self).nil?
     rescue ::Redis::CannotConnectError => e
-      $stderr.puts "Error connecting to redis: #{e.inspect}"
+      Pause::Logger.fatal "Error connecting to redis: #{e.inspect} #{e.message} #{e.backtrace.join("\n")}"
       false
     end
 

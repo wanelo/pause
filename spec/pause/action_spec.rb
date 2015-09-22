@@ -61,7 +61,8 @@ describe Pause::Action do
     end
 
     it "should return false and silently fail if redis is not available" do
-      allow_any_instance_of(Redis).to receive(:zrange) { raise Redis::CannotConnectError }
+      allow(Pause::Logger).to receive(:fatal)
+      allow_any_instance_of(Redis).to receive(:zrange).and_raise Redis::CannotConnectError
       time = period_marker(resolution, Time.now.to_i)
 
       action.increment! 4, time - 25
