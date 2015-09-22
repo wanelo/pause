@@ -15,9 +15,9 @@ describe Pause::Analyzer do
   let(:configuration) { Pause::Configuration.new }
 
   before do
-    Pause.stub(:config).and_return(configuration)
-    Pause.config.stub(:resolution).and_return(resolution)
-    Pause.config.stub(:history).and_return(history)
+    allow(Pause).to receive(:config).and_return(configuration)
+    allow(Pause.config).to receive(:resolution).and_return(resolution)
+    allow(Pause.config).to receive(:history).and_return(history)
   end
 
   let(:analyzer) { Pause.analyzer }
@@ -27,7 +27,7 @@ describe Pause::Analyzer do
   describe "#analyze" do
     it "checks and blocks if max_allowed is reached" do
       time = Time.now
-      adapter.should_receive(:rate_limit!).once.with(action.key, 12)
+      expect(adapter).to receive(:rate_limit!).once.with(action.key, 12)
       Timecop.freeze time do
         5.times do
           action.increment!
@@ -39,7 +39,7 @@ describe Pause::Analyzer do
 
   describe "#check" do
     it "should return nil if action is NOT blocked" do
-      analyzer.check(action).should be_nil
+      expect(analyzer.check(action)).to be nil
     end
 
     it "should return blocked action if action is blocked" do
@@ -47,7 +47,7 @@ describe Pause::Analyzer do
         5.times do
           action.increment!
         end
-        analyzer.check(action).should be_a(Pause::RateLimitedEvent)
+        expect(analyzer.check(action)).to be_a(Pause::RateLimitedEvent)
       end
     end
   end
