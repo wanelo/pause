@@ -27,7 +27,7 @@ describe Pause::Analyzer do
   describe "#analyze" do
     it "checks and blocks if max_allowed is reached" do
       time = Time.now
-      expect(adapter).to receive(:rate_limit!).once.with(action.key, 12)
+      expect(adapter).to receive(:rate_limit!).once.with(action.scope, '1243123', 12)
       Timecop.freeze time do
         5.times do
           action.increment!

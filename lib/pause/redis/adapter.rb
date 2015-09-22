@@ -15,8 +15,8 @@ module Pause
         @history = config.history
       end
 
-      def increment(key, timestamp, count = 1)
-        k = white_key(key)
+      def increment(scope, identifier, timestamp, count = 1)
+        k = tracked_key(scope, identifier)
         redis.multi do |redis|
           redis.zincrby k, count, period_marker(resolution, timestamp)
           redis.expire k, history
@@ -29,40 +29,47 @@ module Pause
         end
       end
 
-      def key_history(key)
-        extract_set_elements(white_key(key))
+      def key_history(scope, identifier)
+        extract_set_elements(tracked_key(scope, identifier))
       end
 
-      def rate_limit!(key, block_ttl)
-        redis.setex(rate_limited_key(key), block_ttl, nil)
+      def rate_limit!(scope, identifier, block_ttl)
+        timestamp = Time.now.to_i + block_ttl
+        redis.zadd rate_limited_list(scope), timestamp, identifier
+        expire_block_list(scope)
       end
 
-      def rate_limited?(key)
-        !!redis.get(rate_limited_key(key))
+      def rate_limited?(scope, identifier)
+        blocked_until = redis.zscore(rate_limited_list(scope), identifier)
+        !!blocked_until && blocked_until > Time.now.to_i
       end
 
       def all_keys(scope)
-        keys(white_key(scope))
+        keys(tracked_scope(scope))
       end
 
       def rate_limited_keys(scope)
-        keys(rate_limited_key(scope))
+        redis.zrangebyscore rate_limited_list(scope), Time.now.to_i, '+inf'
       end
 
+      # For a scope, delete the entire sorted set that holds the block list.
+      # Also delete the original tracking information, so we don't immediately re-block the id
       def delete_rate_limited_keys(scope)
-        delete_rate_limited_ids scope, rate_limited_keys(scope)
+        delete_tracking_keys(scope, rate_limited_keys(scope))
+        redis.del rate_limited_list(scope)
       end
 
       def delete_rate_limited_key(scope, id)
-        delete_rate_limited_ids scope, [id]
+        delete_tracking_keys(scope, [id])
+        redis.zrem rate_limited_list(scope), id
       end
 
       def disable(scope)
-        redis.set("disabled:#{scope}", "1")
+        redis.set("internal:|#{scope}|:disabled", "1")
       end
 
       def enable(scope)
-        redis.del("disabled:#{scope}")
+        redis.del("internal:|#{scope}|:disabled")
       end
 
       def disabled?(scope)
@@ -70,15 +77,18 @@ module Pause
       end
 
       def enabled?(scope)
-        redis.keys("disabled:#{scope}").first.nil?
+        redis.get("internal:|#{scope}|:disabled").nil?
+      end
+
+      def expire_block_list(scope)
+        redis.zremrangebyscore rate_limited_list(scope), '-inf', Time.now.to_i
       end
 
       private
 
-      def delete_rate_limited_ids(scope, ids)
-        increment_keys = ids.map{ |key| white_key(scope, key) }
-        rate_limited_keys = ids.map{ |key| rate_limited_key(scope, key) }
-        redis.del(increment_keys + rate_limited_keys)
+      def delete_tracking_keys(scope, ids)
+        increment_keys = ids.map{ |key| tracked_key(scope, key) }
+        redis.del(increment_keys)
       end
 
       def redis
@@ -87,22 +97,27 @@ module Pause
                                     db:   Pause.config.redis_db)
       end
 
-      def white_key(scope, key = nil)
-        ["i", scope, key].compact.join(':')
+      def tracked_scope(scope)
+        ["i", scope].join(':')
       end
 
-      def rate_limited_key(scope, key = nil)
-        ["b", scope, key].compact.join(':')
+      def tracked_key(scope, identifier)
+        id = "|#{identifier}|"
+        [tracked_scope(scope), id].join(':')
+      end
+
+      def rate_limited_list(scope)
+        "b:|#{scope}|"
       end
 
       def keys(key_scope)
         redis.keys("#{key_scope}:*").map do |key|
-          key.gsub(/^#{key_scope}:/, "")
+          key.gsub(/^#{key_scope}:/, "").tr('|','')
         end
       end
 
       def extract_set_elements(key)
-        (redis.zrange key, 0, -1, :with_scores => true).map do |slice|
+        (redis.zrange key, 0, -1, with_scores: true).map do |slice|
           Pause::SetElement.new(slice[0].to_i, slice[1].to_i)
         end.sort
       end

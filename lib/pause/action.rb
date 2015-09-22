@@ -58,7 +58,7 @@ module Pause
     end
 
     def increment!(count = 1, timestamp = Time.now.to_i)
-      adapter.increment(key, timestamp, count)
+      adapter.increment(scope, identifier, timestamp, count)
     end
 
     def rate_limited?
@@ -90,10 +90,6 @@ module Pause
 
     def unblock
       adapter.delete_rate_limited_key(scope, identifier)
-    end
-
-    def key
-      "#{self.scope}:#{identifier}"
     end
 
     # Actions can be globally disabled or re-enabled in a persistent

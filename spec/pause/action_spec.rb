@@ -28,7 +28,7 @@ describe Pause::Action do
     it "should increment" do
       time = Time.now
       Timecop.freeze time do
-        expect(Pause.adapter).to receive(:increment).with(action.key, time.to_i, 1)
+        expect(Pause.adapter).to receive(:increment).with(action.scope, '1237612', time.to_i, 1)
         action.increment!
       end
     end
