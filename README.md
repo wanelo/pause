@@ -198,6 +198,30 @@ action.ok?
 # => true
 ```
 
+## Using Pause with Twemproxy
+
+Pause can be used with Twemproxy to shard its data among multiple redis instances. When doing so,
+the `hash_tag` configuration in Twemproxy should be set to `"||"`. In addition, the `sharded` Pause
+configuration option should be set to true.
+
+When sharding is used, the Redis adapter used by Pause ignores the `redis_db`, which is not supported.
+
+```ruby
+Pause.configure do |config|
+  config.redis_host = "127.0.0.1"
+  config.redis_port = 6379
+  config.resolution = 600     # aggregate all events into 10 minute blocks
+  config.history    = 86400   # discard all events older than 1 day
+  config.sharded    = true
+end
+```
+
+With this configuration, any Pause operation that we know is not supported by Twemproxy will raise
+`Pause::Redis::OperationNotSupported`. For instance, when sharding we are unable to get a list of all
+tracked identifiers.
+
+The action block list is implemented as a sorted set, so it should still be usable when sharding.
+
 ## Contributing
 
 Want to make it better? Cool. Here's how:
