@@ -9,6 +9,11 @@ module Pause
     class ShardedAdapter < Adapter
       private
 
+      def redis
+        @redis_conn ||= ::Redis.new(host: Pause.config.redis_host,
+          port: Pause.config.redis_port)
+      end
+
       def keys(_key_scope)
         raise OperationNotSupported.new("Can not be executed when Pause is configured in sharded mode")
       end
