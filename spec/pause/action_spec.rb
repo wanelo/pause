@@ -5,7 +5,7 @@ describe Pause::Action do
   include Pause::Helper::Timing
 
   class MyNotification < Pause::Action
-    scope "ipn:follow"
+    scope 'ipn:follow'
     check period_seconds: 20, max_allowed: 5, block_ttl: 40
     check period_seconds: 40, max_allowed: 7, block_ttl: 40
   end
@@ -21,11 +21,11 @@ describe Pause::Action do
     allow(Pause).to receive(:adapter).and_return(Pause::Redis::Adapter.new(Pause.config))
   end
 
-  let(:action) { MyNotification.new("1237612") }
-  let(:other_action) { MyNotification.new("1237613") }
+  let(:action) { MyNotification.new('1237612') }
+  let(:other_action) { MyNotification.new('1237613') }
 
-  describe "#increment!" do
-    it "should increment" do
+  describe '#increment!' do
+    it 'should increment' do
       time = Time.now
       Timecop.freeze time do
         expect(Pause.adapter).to receive(:increment).with(action.scope, '1237612', time.to_i, 1)
@@ -34,8 +34,8 @@ describe Pause::Action do
     end
   end
 
-  describe "#ok?" do
-    it "should successfully return if the action is blocked or not" do
+  describe '#ok?' do
+    it 'should successfully return if the action is blocked or not' do
       time = Time.now
       Timecop.freeze time do
         4.times do
@@ -47,7 +47,7 @@ describe Pause::Action do
       end
     end
 
-    it "should successfully consider different period checks" do
+    it 'should successfully consider different period checks' do
       time = Time.parse('Sept 22, 11:34:00')
 
       Timecop.freeze time - 30 do
@@ -66,7 +66,7 @@ describe Pause::Action do
       end
     end
 
-    it "should return false and silently fail if redis is not available" do
+    it 'should return false and silently fail if redis is not available' do
       allow(Pause::Logger).to receive(:fatal)
       allow_any_instance_of(Redis).to receive(:zrange).and_raise Redis::CannotConnectError
       time = period_marker(resolution, Time.now.to_i)
@@ -77,15 +77,15 @@ describe Pause::Action do
     end
   end
 
-  describe "#analyze" do
-    context "action should not be rate limited" do
-      it "returns nil" do
+  describe '#analyze' do
+    context 'action should not be rate limited' do
+      it 'returns nil' do
         expect(action.analyze).to be nil
       end
     end
 
-    context "action should be rate limited" do
-      it "returns a RateLimitedEvent object" do
+    context 'action should be rate limited' do
+      it 'returns a RateLimitedEvent object' do
         time = Time.now
         rate_limit = nil
 
@@ -105,8 +105,8 @@ describe Pause::Action do
     end
   end
 
-  describe ".tracked_identifiers" do
-    it "should return all the identifiers tracked (but not blocked) so far" do
+  describe '.tracked_identifiers' do
+    it 'should return all the identifiers tracked (but not blocked) so far' do
       action.increment!
       other_action.increment!
 
@@ -118,8 +118,8 @@ describe Pause::Action do
     end
   end
 
-  describe ".rate_limited_identifiers" do
-    it "should return all the identifiers blocked" do
+  describe '.rate_limited_identifiers' do
+    it 'should return all the identifiers blocked' do
       action.increment!(100, Time.now.to_i)
       other_action.increment!(100, Time.now.to_i)
 
@@ -131,8 +131,8 @@ describe Pause::Action do
     end
   end
 
-  describe ".unblock_all" do
-    it "should unblock all the identifiers for a scope" do
+  describe '.unblock_all' do
+    it 'should unblock all the identifiers for a scope' do
       10.times { action.increment! }
       other_action.increment!
 
@@ -149,7 +149,7 @@ describe Pause::Action do
     end
   end
 
-  describe "#unblock" do
+  describe '#unblock' do
     it 'unblocks the specified id' do
       10.times { action.increment! }
 
@@ -162,7 +162,7 @@ describe Pause::Action do
   end
 end
 
-describe Pause::Action, ".check" do
+describe Pause::Action, '.check' do
   class ActionWithCheck < Pause::Action
     check 100, 150, 200
   end
@@ -177,50 +177,50 @@ describe Pause::Action, ".check" do
     check period_seconds: 50, block_ttl: 60, max_allowed: 100
   end
 
-  it "should define a period check on new instances" do
-    expect(ActionWithCheck.new("id").checks).to eq([
+  it 'should define a period check on new instances' do
+    expect(ActionWithCheck.new('id').checks).to eq([
           Pause::PeriodCheck.new(100, 150, 200)
         ])
   end
 
-  it "should define a period check on new instances" do
-    expect(ActionWithMultipleChecks.new("id").checks).to eq([
+  it 'should define a period check on new instances' do
+    expect(ActionWithMultipleChecks.new('id').checks).to eq([
           Pause::PeriodCheck.new(100, 150, 200),
           Pause::PeriodCheck.new(200, 150, 200),
           Pause::PeriodCheck.new(300, 150, 200)
         ])
   end
 
-  it "should accept hash arguments" do
-    expect(ActionWithHashChecks.new("id").checks).to eq([
+  it 'should accept hash arguments' do
+    expect(ActionWithHashChecks.new('id').checks).to eq([
           Pause::PeriodCheck.new(50, 100, 60)
         ])
   end
 
 end
 
-describe Pause::Action, ".scope" do
+describe Pause::Action, '.scope' do
   class UndefinedScopeAction < Pause::Action
   end
 
-  it "should raise if scope is not defined" do
+  it 'should raise if scope is not defined' do
     expect {
-      UndefinedScopeAction.new("1.2.3.4").scope
-    }.to raise_error("Should implement scope. (Ex: ipn:follow)")
+      UndefinedScopeAction.new('1.2.3.4').scope
+    }.to raise_error('Should implement scope. (Ex: ipn:follow)')
   end
 
   class DefinedScopeAction < Pause::Action
-    scope "my:scope"
+    scope 'my:scope'
   end
 
-  it "should set scope on class" do
-    expect(DefinedScopeAction.new("1.2.3.4").scope).to eq("my:scope")
+  it 'should set scope on class' do
+    expect(DefinedScopeAction.new('1.2.3.4').scope).to eq('my:scope')
   end
 end
 
-describe Pause::Action, "enabled/disabled states" do
+describe Pause::Action, 'enabled/disabled states' do
   class BlockedAction < Pause::Action
-    scope "blocked"
+    scope 'blocked'
     check 10, 0, 10
   end
 
@@ -233,27 +233,27 @@ describe Pause::Action, "enabled/disabled states" do
 
   let(:action) { BlockedAction }
 
-  describe "#disable" do
+  describe '#disable' do
     before do
       expect(action).to be_enabled
       expect(action).to_not be_disabled
       action.disable
     end
 
-    it "disables the action" do
+    it 'disables the action' do
       expect(action).to be_disabled
       expect(action).to_not be_enabled
     end
   end
 
-  describe "#enable" do
+  describe '#enable' do
     before do
       action.disable
       expect(action).to_not be_enabled
       action.enable
     end
 
-    it "enables the action" do
+    it 'enables the action' do
       expect(action).to be_enabled
       expect(action).to_not be_disabled
     end

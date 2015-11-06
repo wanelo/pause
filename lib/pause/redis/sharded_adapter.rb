@@ -28,7 +28,7 @@ module Pause
       end
 
       def keys(_key_scope)
-        raise OperationNotSupported.new("Can not be executed when Pause is configured in sharded mode")
+        raise OperationNotSupported.new('Can not be executed when Pause is configured in sharded mode')
       end
     end
   end

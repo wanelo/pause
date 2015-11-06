@@ -22,10 +22,10 @@ describe Pause::Analyzer do
 
   let(:analyzer) { Pause.analyzer }
   let(:adapter) { Pause.adapter }
-  let(:action) { FollowPushNotification.new("1243123") }
+  let(:action) { FollowPushNotification.new('1243123') }
 
-  describe "#analyze" do
-    it "checks and blocks if max_allowed is reached" do
+  describe '#analyze' do
+    it 'checks and blocks if max_allowed is reached' do
       time = Time.now
       expect(adapter).to receive(:rate_limit!).once.with(action.scope, '1243123', 12)
       Timecop.freeze time do
@@ -37,12 +37,12 @@ describe Pause::Analyzer do
     end
   end
 
-  describe "#check" do
-    it "should return nil if action is NOT blocked" do
+  describe '#check' do
+    it 'should return nil if action is NOT blocked' do
       expect(analyzer.check(action)).to be nil
     end
 
-    it "should return blocked action if action is blocked" do
+    it 'should return blocked action if action is blocked' do
       Timecop.freeze Time.now do
         5.times do
           action.increment!

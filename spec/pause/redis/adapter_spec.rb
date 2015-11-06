@@ -19,11 +19,11 @@ describe Pause::Redis::Adapter do
   let(:redis_conn) { adapter.send(:redis) }
 
   describe '#increment' do
-    let(:scope) { "blah" }
-    let(:identifier) { "213213" }
-    let(:tracked_key) { "i:blah:|213213|"}
+    let(:scope) { 'blah' }
+    let(:identifier) { '213213' }
+    let(:tracked_key) { 'i:blah:|213213|' }
 
-    it "should add key to a redis set" do
+    it 'should add key to a redis set' do
       adapter.increment(scope, identifier, Time.now.to_i)
       set = redis_conn.zrange(tracked_key, 0, -1, :with_scores => true)
       expect(set).to_not be_empty
@@ -31,7 +31,7 @@ describe Pause::Redis::Adapter do
       expect(set[0].size).to eql(2)
     end
 
-    it "should remove old key from a redis set" do
+    it 'should remove old key from a redis set' do
       time = Time.now
       expect(redis_conn).to receive(:zrem).with(tracked_key, [adapter.period_marker(resolution, time)])
 
@@ -44,7 +44,7 @@ describe Pause::Redis::Adapter do
       end
     end
 
-    it "sets expiry on key" do
+    it 'sets expiry on key' do
       expect(redis_conn).to receive(:expire).with(tracked_key, history)
       adapter.increment(scope, identifier, Time.now.to_i)
     end
@@ -73,41 +73,41 @@ describe Pause::Redis::Adapter do
     end
   end
 
-  describe "#rate_limit!" do
+  describe '#rate_limit!' do
   end
 
-  describe "#rate_limited?" do
+  describe '#rate_limited?' do
     let(:scope) { 'ipn:follow' }
     let(:identifier) { '123461234' }
     let(:blocked_key) { "b:#{key}" }
     let(:ttl) { 110000 }
 
-    it "should return true if blocked" do
+    it 'should return true if blocked' do
       adapter.rate_limit!(scope, identifier, ttl)
       expect(adapter.rate_limited?(scope, identifier)).to be true
     end
   end
 
-  describe "#tracked_key" do
-    it "prefixes key" do
-      expect(adapter.send(:tracked_key, "abc", "12345")).to eq("i:abc:|12345|")
+  describe '#tracked_key' do
+    it 'prefixes key' do
+      expect(adapter.send(:tracked_key, 'abc', '12345')).to eq('i:abc:|12345|')
     end
   end
 
   describe '#enable' do
     it 'deletes the disabled flag in redis' do
-      adapter.disable("boom")
-      expect(adapter.disabled?("boom")).to be true
-      adapter.enable("boom")
-      expect(adapter.disabled?("boom")).to be false
+      adapter.disable('boom')
+      expect(adapter.disabled?('boom')).to be true
+      adapter.enable('boom')
+      expect(adapter.disabled?('boom')).to be false
     end
   end
 
   describe '#disable' do
     it 'sets the disabled flag in redis' do
-      expect(adapter.enabled?("boom")).to be true
-      adapter.disable("boom")
-      expect(adapter.enabled?("boom")).to be false
+      expect(adapter.enabled?('boom')).to be true
+      adapter.disable('boom')
+      expect(adapter.enabled?('boom')).to be false
     end
   end
 
@@ -124,7 +124,7 @@ describe Pause::Redis::Adapter do
       let(:blocked_key) { "b:|#{scope}|" }
       let(:ttl) { 110000 }
 
-      it "saves ip to redis with expiration" do
+      it 'saves ip to redis with expiration' do
         time = Time.now
         Timecop.freeze time do
           adapter.rate_limit!(scope, identifier, ttl)

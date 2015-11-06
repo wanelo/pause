@@ -8,7 +8,7 @@ module Pause
     end
 
     def redis_host
-      @redis_host || "127.0.0.1"
+      @redis_host || '127.0.0.1'
     end
 
     def redis_port
@@ -28,7 +28,7 @@ module Pause
     end
 
     def sharded
-      @sharded || false
+      !!@sharded
     end
   end
 end

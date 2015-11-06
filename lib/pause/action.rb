@@ -14,7 +14,7 @@ module Pause
     #     end
     #
     def scope
-      raise "Should implement scope. (Ex: ipn:follow)"
+      raise 'Should implement scope. (Ex: ipn:follow)'
     end
 
     def self.scope(scope_identifier = nil)

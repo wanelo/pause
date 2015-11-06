@@ -98,7 +98,7 @@ module Pause
       end
 
       def tracked_scope(scope)
-        ["i", scope].join(':')
+        ['i', scope].join(':')
       end
 
       def tracked_key(scope, identifier)
