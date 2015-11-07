@@ -13,12 +13,13 @@ describe Pause::Action do
   let(:resolution) { 10 }
   let(:history) { 60 }
   let(:configuration) { Pause::Configuration.new }
+  let(:adapter) { Pause::Redis::Adapter.new(Pause.config) }
 
   before do
     allow(Pause).to receive(:config).and_return(configuration)
     allow(Pause.config).to receive(:resolution).and_return(resolution)
     allow(Pause.config).to receive(:history).and_return(history)
-    allow(Pause).to receive(:adapter).and_return(Pause::Redis::Adapter.new(Pause.config))
+    allow(Pause).to receive(:adapter).and_return(adapter)
   end
 
   let(:action) { MyNotification.new('1237612') }
@@ -158,6 +159,14 @@ describe Pause::Action do
       action.unblock
 
       expect(action.ok?).to be true
+    end
+  end
+
+  describe '#block_for' do
+    it 'blocks the IP for N seconds' do
+      expect(adapter).to receive(:rate_limit!).with(action.scope, action.identifier, 10).and_call_original
+      action.block_for(10)
+      expect(action.ok?).to be false
     end
   end
 end

@@ -57,6 +57,10 @@ module Pause
       @checks = period_checks
     end
 
+    def block_for(ttl)
+      adapter.rate_limit!(scope, identifier, ttl)
+    end
+
     def increment!(count = 1, timestamp = Time.now.to_i)
       adapter.increment(scope, identifier, timestamp, count)
     end
