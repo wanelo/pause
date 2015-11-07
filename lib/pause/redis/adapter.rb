@@ -54,9 +54,14 @@ module Pause
 
       # For a scope, delete the entire sorted set that holds the block list.
       # Also delete the original tracking information, so we don't immediately re-block the id
+      #
+      # @return count [Integer] the number of items deleted
       def delete_rate_limited_keys(scope)
+        return 0 unless rate_limited_keys(scope).any?
         delete_tracking_keys(scope, rate_limited_keys(scope))
-        redis.del rate_limited_list(scope)
+        redis.zremrangebyscore(rate_limited_list(scope), '-inf', '+inf').tap do |_count|
+          redis.del rate_limited_list(scope)
+        end
       end
 
       def delete_rate_limited_key(scope, id)

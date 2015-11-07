@@ -137,17 +137,31 @@ describe Pause::Redis::Adapter do
   end
 
   describe '#delete_rate_limited_keys' do
-    it 'calls redis del with all keys' do
-      adapter.rate_limit!('boom', '1', 10)
-      adapter.rate_limit!('boom', '2', 10)
+    context 'with blocked items' do
+      before do
+        adapter.rate_limit!('boom', '1', 10)
+        adapter.rate_limit!('boom', '2', 10)
 
-      expect(adapter.rate_limited?('boom', '1')).to be true
-      expect(adapter.rate_limited?('boom', '2')).to be true
+        expect(adapter.rate_limited?('boom', '1')).to be true
+        expect(adapter.rate_limited?('boom', '2')).to be true
+      end
 
-      adapter.delete_rate_limited_keys('boom')
+      it 'calls redis del with all keys' do
+        adapter.delete_rate_limited_keys('boom')
 
-      expect(adapter.rate_limited?('boom', '1')).to be false
-      expect(adapter.rate_limited?('boom', '2')).to be false
+        expect(adapter.rate_limited?('boom', '1')).to be false
+        expect(adapter.rate_limited?('boom', '2')).to be false
+      end
+
+      it 'returns the number of unblocked items' do
+        expect(adapter.delete_rate_limited_keys('boom')).to eq(2)
+      end
+    end
+
+    context 'with no blocked items' do
+      it 'returns 0' do
+        expect(adapter.delete_rate_limited_keys('boom')).to eq(0)
+      end
     end
   end
 
