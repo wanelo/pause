@@ -4,7 +4,14 @@ module Pause
   class Analyzer
     include Pause::Helper::Timing
 
+    # #check(action)
+    #
+    # @param action [Pause::Action]
+    # @return [nil]  everything is fine
+    # @return [false]  this action is already blocked
+    # @return [Pause::RateLimitedEvent]  the action was blocked as a result of this check
     def check(action)
+      return false if adapter.rate_limited?(action.scope, action.identifier)
       timestamp = period_marker(Pause.config.resolution, Time.now.to_i)
       set = adapter.key_history(action.scope, action.identifier)
       action.checks.each do |period_check|

@@ -5,7 +5,7 @@ describe Pause::Analyzer do
   include Pause::Helper::Timing
 
   class FollowPushNotification < Pause::Action
-    scope "ipn:follow"
+    scope 'ipn:follow'
     check 20, 5, 12
     check 40, 7, 12
   end
@@ -13,15 +13,16 @@ describe Pause::Analyzer do
   let(:resolution) { 10 }
   let(:history) { 60 }
   let(:configuration) { Pause::Configuration.new }
+  let(:adapter) { Pause::Redis::Adapter.new(configuration) }
 
   before do
     allow(Pause).to receive(:config).and_return(configuration)
     allow(Pause.config).to receive(:resolution).and_return(resolution)
     allow(Pause.config).to receive(:history).and_return(history)
+    allow(Pause).to receive(:adapter).and_return(adapter)
   end
 
   let(:analyzer) { Pause.analyzer }
-  let(:adapter) { Pause.adapter }
   let(:action) { FollowPushNotification.new('1243123') }
 
   describe '#analyze' do
