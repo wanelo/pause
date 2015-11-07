@@ -12,6 +12,7 @@ describe Pause::Configuration, '#configure' do
 
       c.resolution = 5000
       c.history = 6000
+      c.sharded = true
     end
 
     expect(subject.redis_host).to eq('128.23.12.8')
@@ -20,6 +21,7 @@ describe Pause::Configuration, '#configure' do
 
     expect(subject.resolution).to eq(5000)
     expect(subject.history).to eq(6000)
+    expect(subject.sharded).to be true
   end
 
   it 'should provide redis defaults' do
@@ -32,5 +34,6 @@ describe Pause::Configuration, '#configure' do
     expect(subject.redis_db).to eq('1')
     expect(subject.resolution).to eq(600) # 10 minutes
     expect(subject.history).to eq(86400) # one day
+    expect(subject.sharded).to be false
   end
 end
