@@ -10,7 +10,6 @@ require 'rubygems'
 require 'bundler/setup' if File.exists?(ENV['BUNDLE_GEMFILE'])
 require 'pause'
 require 'pry'
-require 'support/fakeredis'
 
 RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
