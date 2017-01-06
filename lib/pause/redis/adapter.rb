@@ -10,20 +10,27 @@ module Pause
       attr_accessor :resolution, :time_blocks_to_keep, :history
 
       def initialize(config)
-        @resolution = config.resolution
+        @resolution          = config.resolution
         @time_blocks_to_keep = config.history / @resolution
-        @history = config.history
+        @history             = config.history
+      end
+
+      # Override in subclasses to disable
+      def with_multi
+        redis.multi do |redis|
+          yield(redis) if block_given?
+        end
       end
 
       def increment(scope, identifier, timestamp, count = 1)
         k = tracked_key(scope, identifier)
-        redis.multi do |redis|
+        with_multi do |redis|
           redis.zincrby k, count, period_marker(resolution, timestamp)
           redis.expire k, history
         end
 
         if redis.zcard(k) > time_blocks_to_keep
-          list = extract_set_elements(k)
+          list      = extract_set_elements(k)
           to_remove = list.slice(0, (list.size - time_blocks_to_keep))
           redis.zrem(k, to_remove.map(&:ts))
         end
@@ -78,7 +85,7 @@ module Pause
       end
 
       def disabled?(scope)
-        ! enabled?(scope)
+        !enabled?(scope)
       end
 
       def enabled?(scope)
@@ -89,18 +96,25 @@ module Pause
         redis.zremrangebyscore rate_limited_list(scope), '-inf', Time.now.to_i
       end
 
+      protected
+
+      def redis
+        @redis_conn ||= ::Redis.new(redis_connection_opts)
+      end
+
+      def redis_connection_opts
+        { host: Pause.config.redis_host,
+          port: Pause.config.redis_port,
+          db:   Pause.config.redis_db }
+      end
+
       private
 
       def delete_tracking_keys(scope, ids)
-        increment_keys = ids.map{ |key| tracked_key(scope, key) }
+        increment_keys = ids.map { |key| tracked_key(scope, key) }
         redis.del(increment_keys)
       end
 
-      def redis
-        @redis_conn ||= ::Redis.new(host: Pause.config.redis_host,
-                                    port: Pause.config.redis_port,
-                                    db:   Pause.config.redis_db)
-      end
 
       def tracked_scope(scope)
         ['i', scope].join(':')
@@ -117,7 +131,7 @@ module Pause
 
       def keys(key_scope)
         redis.keys("#{key_scope}:*").map do |key|
-          key.gsub(/^#{key_scope}:/, "").tr('|','')
+          key.gsub(/^#{key_scope}:/, "").tr('|', '')
         end
       end
 
