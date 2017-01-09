@@ -5,6 +5,17 @@ module Pause
 
     # This class encapsulates Redis operations used by Pause
     class Adapter
+      class << self
+        def redis
+          @redis_conn ||= ::Redis.new(redis_connection_opts)
+        end
+
+        def redis_connection_opts
+          { host: Pause.config.redis_host,
+            port: Pause.config.redis_port,
+            db:   Pause.config.redis_db }
+        end
+      end
 
       include Pause::Helper::Timing
       attr_accessor :resolution, :time_blocks_to_keep, :history
@@ -96,19 +107,11 @@ module Pause
         redis.zremrangebyscore rate_limited_list(scope), '-inf', Time.now.to_i
       end
 
-      protected
+      private
 
       def redis
-        @redis_conn ||= ::Redis.new(redis_connection_opts)
+        self.class.redis
       end
-
-      def redis_connection_opts
-        { host: Pause.config.redis_host,
-          port: Pause.config.redis_port,
-          db:   Pause.config.redis_db }
-      end
-
-      private
 
       def delete_tracking_keys(scope, ids)
         increment_keys = ids.map { |key| tracked_key(scope, key) }

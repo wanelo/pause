@@ -10,6 +10,7 @@ require 'rubygems'
 require 'bundler/setup' if File.exists?(ENV['BUNDLE_GEMFILE'])
 require 'pause'
 require 'pry'
+require 'pause/redis/adapter'
 
 RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
@@ -20,4 +21,7 @@ RSpec.configure do |config|
   # the seed, which is printed after each run.
   #     --seed 1234
   config.order = 'random'
+  config.before(:example) do
+    Pause::Redis::Adapter.redis.flushdb
+  end
 end

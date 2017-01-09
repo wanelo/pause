@@ -81,13 +81,14 @@ describe Pause::Action do
   describe '#analyze' do
     context 'action should not be rate limited' do
       it 'returns nil' do
+        expect(adapter.rate_limited?(action.scope, action.identifier)).to be false
         expect(action.analyze).to be nil
       end
     end
 
     context 'action should be rate limited' do
       it 'returns a RateLimitedEvent object' do
-        time = Time.now
+        time       = Time.now
         rate_limit = nil
 
         Timecop.freeze time do
@@ -188,12 +189,13 @@ describe Pause::Action, '.check' do
 
   it 'should define a period check on new instances' do
     expect(ActionWithCheck.new('id').checks).to eq([
-          Pause::PeriodCheck.new(100, 150, 200)
-        ])
+                                                     Pause::PeriodCheck.new(100, 150, 200)
+                                                   ])
   end
 
   it 'should define a period check on new instances' do
-    expect(ActionWithMultipleChecks.new('id').checks).to eq([
+    expect(ActionWithMultipleChecks.new('id').checks).to \
+      eq([
           Pause::PeriodCheck.new(100, 150, 200),
           Pause::PeriodCheck.new(200, 150, 200),
           Pause::PeriodCheck.new(300, 150, 200)
@@ -202,20 +204,21 @@ describe Pause::Action, '.check' do
 
   it 'should accept hash arguments' do
     expect(ActionWithHashChecks.new('id').checks).to eq([
-          Pause::PeriodCheck.new(50, 100, 60)
-        ])
+                                                          Pause::PeriodCheck.new(50, 100, 60)
+                                                        ])
   end
 
 end
 
 describe Pause::Action, '.scope' do
-  class UndefinedScopeAction < Pause::Action
+  module MyApp
+    class NoScope < ::Pause::Action
+    end
   end
 
+
   it 'should raise if scope is not defined' do
-    expect {
-      UndefinedScopeAction.new('1.2.3.4').scope
-    }.to raise_error('Should implement scope. (Ex: ipn:follow)')
+    expect(MyApp::NoScope.new('1.2.3.4').scope).to eq 'myapp.noscope'
   end
 
   class DefinedScopeAction < Pause::Action
@@ -236,7 +239,7 @@ describe Pause::Action, 'enabled/disabled states' do
   before do
     Pause.configure do |c|
       c.resolution = 10
-      c.history = 10
+      c.history    = 10
     end
   end
 

@@ -13,7 +13,7 @@ module Pause
     def check(action)
       return false if adapter.rate_limited?(action.scope, action.identifier)
       timestamp = period_marker(Pause.config.resolution, Time.now.to_i)
-      set = adapter.key_history(action.scope, action.identifier)
+      set       = adapter.key_history(action.scope, action.identifier)
       action.checks.each do |period_check|
         start_time = timestamp - period_check.period_seconds
         set.reverse.inject(0) do |sum, element|
