@@ -13,6 +13,7 @@ require 'pry'
 
 if ENV['PAUSE_REAL_REDIS']
   require 'pause/redis/adapter'
+  puts "\n==> Using real Redis-server at #{Pause::Redis::Adapter.redis.inspect}\n\n"
 else
   require 'fakeredis/rspec'
 end
