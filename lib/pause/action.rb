@@ -4,7 +4,7 @@ module Pause
 
     def initialize(identifier)
       @identifier       = identifier
-      self.class.checks = [] unless self.class.instance_variable_get(:@checks)
+      self.class.checks ||= []
     end
 
     def scope

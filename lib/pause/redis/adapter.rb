@@ -40,11 +40,7 @@ module Pause
           redis.expire k, history
         end
 
-        if redis.zcard(k) > time_blocks_to_keep
-          list      = extract_set_elements(k)
-          to_remove = list.slice(0, (list.size - time_blocks_to_keep))
-          redis.zrem(k, to_remove.map(&:ts))
-        end
+        truncate_set_for(k)
       end
 
       def key_history(scope, identifier)
@@ -113,11 +109,18 @@ module Pause
         self.class.redis
       end
 
+      def truncate_set_for(k)
+        if redis.zcard(k) > time_blocks_to_keep
+          list      = extract_set_elements(k)
+          to_remove = list.slice(0, (list.size - time_blocks_to_keep)).map(&:ts)
+          redis.zrem(k, to_remove) if k && to_remove && to_remove.size > 0
+        end
+      end
+
       def delete_tracking_keys(scope, ids)
         increment_keys = ids.map { |key| tracked_key(scope, key) }
         redis.del(increment_keys)
       end
-
 
       def tracked_scope(scope)
         ['i', scope].join(':')
