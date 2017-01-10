@@ -222,6 +222,26 @@ tracked identifiers.
 
 The action block list is implemented as a sorted set, so it should still be usable when sharding.
 
+## Testing
+
+By default, `fakeredis` gem is used to emulate Redis in development. However, the same test-suite should be able to run against a real redis — however, be aware that it will flush the current db during spec run. In order to run specs against real redis, make sure you have Redis running locally on the default port, and that you are able to connect to it using `redis-cli`.
+
+Please note that Travis suite, as well as the default rake task, run both.
+
+### Unit Testing with Fakeredis
+
+Fakeredis is the default, and is also run whenever `bundle exec rspec` is executed, or `rake spec` task invoked.
+
+```bash
+bundle exec rake spec:unit
+```
+
+### Integration Testing with Redis
+
+```bash
+bundle exec rake spec:integration
+```
+
 ## Contributing
 
 Want to make it better? Cool. Here's how:
