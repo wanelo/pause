@@ -17,3 +17,5 @@ test/version_tmp
 tmp
 .idea
 .DS_Store
+.ruby-version
+.spec

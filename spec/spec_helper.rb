@@ -5,20 +5,33 @@
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
-ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __FILE__)
-require 'rubygems'
-require 'bundler/setup' if File.exists?(ENV['BUNDLE_GEMFILE'])
+require 'fileutils'
+
+require 'simplecov'
+SimpleCov.start
+
 require 'pause'
-require 'pry'
-require 'support/fakeredis'
+
+if ENV['PAUSE_REAL_REDIS']
+  require 'pause/redis/adapter'
+  puts ; puts "NOTE: Using real Redis-server at #{Pause::Redis::Adapter.redis.inspect}\n\n"
+else
+  require 'fakeredis/rspec'
+end
 
 RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
 
-  # Run specs in random order to surface order dependencies. If you find an
-  # order dependency and want to debug it, you can fix the order by providing
-  # the seed, which is printed after each run.
-  #     --seed 1234
+  rspec_dir = './.spec'.freeze
+  FileUtils.mkdir_p(rspec_dir)
+  config.example_status_persistence_file_path = "#{rspec_dir}/results.txt"
+
   config.order = 'random'
+
+  if ENV['PAUSE_REAL_REDIS']
+    config.before(:example) do
+      Pause::Redis::Adapter.redis.flushdb
+    end
+  end
 end

@@ -3,7 +3,7 @@ module Pause
     attr_writer :redis_host, :redis_port, :redis_db, :resolution, :history, :sharded
 
     def configure
-      yield self
+      yield self if block_given?
       self
     end
 

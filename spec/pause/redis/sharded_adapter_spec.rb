@@ -21,4 +21,18 @@ describe Pause::Redis::ShardedAdapter do
       expect { adapter.all_keys('cake') }.to raise_error(Pause::Redis::OperationNotSupported)
     end
   end
+
+  describe '#with_multi' do
+    let(:redis) { adapter.send(:redis) }
+    it 'should not call redis.multi' do
+      expect(redis).to_not receive(:multi)
+      expect { adapter.increment(:scope, 123, Time.now) }.to_not raise_error
+    end
+  end
+
+  describe '#redis' do
+    it 'should not use redis db when connecting' do
+      expect(adapter.send(:redis_connection_opts)).to_not include(:db)
+    end
+  end
 end

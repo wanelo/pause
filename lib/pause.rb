@@ -1,4 +1,5 @@
 require 'redis'
+require 'colored2'
 require 'pause/version'
 require 'pause/configuration'
 require 'pause/action'
@@ -37,11 +38,11 @@ module Pause
     end
 
     def configure(&block)
-      @configuration = Pause::Configuration.new.configure(&block)
+      @configuration ||= Pause::Configuration.new.configure(&block)
     end
 
-    def config
-      @configuration
+    def config(&block)
+      configure(&block)
     end
   end
 end
