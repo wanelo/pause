@@ -11,7 +11,7 @@ before_script:
   - ./cc-test-reporter before-build
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
-script: 'bundle exec rake || ( sleep 1; bundle exec rspec --only-failures ) '
+script: bin/spec
 services:
 - redis-server
 notifications:

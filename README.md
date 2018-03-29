@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/kigster/pause.svg?branch=master)](https://travis-ci.org/kigster/pause)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/af443a25cc902e629c8f/test_coverage)](https://codeclimate.com/github/kigster/pause/test_coverage)
 
-[![Gem Version](https://badge.fury.io/rb/pause.png)](https://badge.fury.io/rb/pause)
+[![Gem Version](https://badge.fury.io/rb/pause.svg)](https://badge.fury.io/rb/pause.svg)
 [![Maintainability](https://api.codeclimate.com/v1/badges/af443a25cc902e629c8f/maintainability)](https://codeclimate.com/github/kigster/pause/maintainability)
 
 # Pause

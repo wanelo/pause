@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+retry-errors() {
+  sleep 1
+  bundle exec rspec --only-failures
+}
+
+specs() {
+  bundle exec rspec && \
+    PAUSE_REAL_REDIS=true bundle exec rspec
+}
+
+specs || retry-errors
+
