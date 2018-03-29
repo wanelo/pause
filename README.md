@@ -1,17 +1,105 @@
-Pause
-======
+# Pause
 
 [![Gem Version](https://badge.fury.io/rb/pause.png)](http://badge.fury.io/rb/pause)
-[![Build status](https://secure.travis-ci.org/wanelo/pause.png)](http://travis-ci.org/wanelo/pause)
+[![Build Status](https://travis-ci.org/kigster/pause.svg?branch=master)](https://travis-ci.org/kigster/pause)
 
-Pause is a flexible Redis-backed rate-limiting client. Use it to track events, with
+## In a Nutshell
+
+**Pause** is a fast and very flexible Redis-backed rate-limiter. You can use it to track events, with
 rules around how often they are allowed to occur within configured time checks.
 
-Because Pause is Redis-based, multiple ruby processes (even distributed across multiple servers) can track and report
-events together, and then query whether a particular identifier should be rate limited or not.
+Sample applications include:
+ 
+ * throttling notifications sent to a user as to not overwhelm them with too much frequency,
+ * IP-based blocking based on HTTP request volume (see the related gem [spanx](https://github.com/wanelo/spanx)) that uses Pause,
+ * ensuring you do not exceed API rate limits when calling external web APIs.
+ * etc.
+ 
+Pause currently does not offer a CLI client, and can only be used from within a Ruby application.
 
-Sample applications include IP-based blocking based on HTTP request volume (see related gem "spanx"),
-throttling push notifications as to not overwhelm the user with too much frequency, etc.
+Additionally:
+
+ * Pause is pure-ruby gem and does not depend on Rails or Rack
+ * Pause can be used across multiple ruby processes, since it uses a distributed Redis backend
+ * Pause is currently in use by a web application receiving 6K-10K web requests per second
+ * Pause will work with a horizontally sharded multi-Redis-backend by using Twitter's [Twemproxy](https://github.com/twitter/twemproxy). This way, millions of concurrent users can be handled with ease.
+
+### Quick Start
+
+This section is meant to give you a rapid introduction, so that you can start using Pause immediately.
+
+Our use case: we want to rate limit notifications sent to users, identified by their `user_id`, to:
+
+ * no more than 1 in any 2-hour period
+ * no more than 3 per day
+ * no more than 7 per week
+
+Here is how we could set this up using Pause:
+
+#### Configuration
+
+We need to setup Pause with a Redis instance. Here is how we do it:
+
+```ruby
+require 'pause'
+
+# First, lets point Pause to a Redis instance
+Pause.configure do |config|
+  # Redis connection parameters
+  config.redis_host = '127.0.0.1'
+  config.redis_port = 6379
+  config.redis_db   = 1
+  
+  # aggregate all events into 10 minute blocks. 
+  # Larger blocks require less RAM and CPU, smaller blocks are more 
+  # computationally expensive.
+  config.resolution = 600
+       
+  # discard all events older than 1 day
+  config.history    = 86400   
+end
+```
+
+#### Define Rate Limited "Action"
+
+Next we must define the rate limited action based on the specification above. This is how easy it is:
+
+```ruby
+module MyApp
+  class UserNotificationLimiter < ::Pause::Action
+    # this is a redis key namespace added to all data in this action
+    scope 'un'  
+    check period_seconds:       120, max_allowed: 1
+    check period_seconds:     86400, max_allowed: 3
+    check period_seconds: 7 * 86400, max_allowed: 7
+  end
+end
+```
+
+#### Perform operation, but only if the user is not rate-limited
+
+Now we simply instantiate this limiter by passing user ID (any unique identifier works). We can then ask the limiter, `ok?` or `rate_limited?`, or we can use two convenient methods that only execute enclosed block if the described condition is satisfied:
+
+```ruby
+class NotificationsWorker
+  def perform(user_id)
+    limiter = MyApp::UserNotificationLimiter.new(user_id)
+    
+    limiter.unless_rate_limited do
+      user = User.find(user_id) 
+      user.send_push_notification!
+    end
+    
+    # You can also do something in case the user is rate limited:
+    limiter.if_rate_limited do |rate_limit_event|
+      Rails.logger.info("user #{user.id} has exceeded rate limit: #{rate_limit_event}") 
+    end
+  end
+end
+```
+
+That's it! Using these two methods you can pretty much ensure that your rate limits are always in check. 
+
 
 ## Installation
 
@@ -86,47 +174,44 @@ In other words, if your shortest check is 1 minute, you could set resolution to 
 require 'pause'
 
 class FollowAction < Pause::Action
-  scope "f"
+  scope 'fa' # keep those short
   check period_seconds:   60, max_allowed:  100, block_ttl: 3600
   check period_seconds: 1800, max_allowed: 2000, block_ttl: 3600
 end
 ```
 
-When an event occurs, you increment an instance of your action, optionally with a timestamp and count. This saves
-data into a redis store, so it can be checked later by other processes. Timestamps should be in unix epoch format.
+When an event occurs, you increment an instance of your action, optionally with a timestamp and count. This saves data into a redis store, so it can be checked later by other processes. Timestamps should be in unix epoch format.
+
+In the example at the top of the README you saw how we used `#unless_rate_limited` and `#if_rate_limited` methods. These are the recommended API methods, but if you must get a finer-grained control over the actions, you can also use methods such as `#ok?`, `#rate_limited?`, `#increment!` to do manually what the block methods do already. Below is an example of this "manual" implementation:
 
 ```ruby
 class FollowsController < ApplicationController
   def create
     action = FollowAction.new(user.id)
     if action.ok?
-      # do stuff!
-      # and track it...
+      user.follow! 
+      # and don't forget to track the "success"
       action.increment!
-    else
-      # action is rate limited, either skip
-      # or show error, depending on the context.
     end
   end
 end
 
 class OtherController < ApplicationController
   def index
-    action = OtherAction.new(params[:thing])
+    action = OtherAction.new(params[:thing])d
     unless action.rate_limited?
       # perform business logic
-      ....
-      # track it
+      # but in this
       action.increment!(params[:count].to_i, Time.now.to_i)
     end
   end
 end
 ```
 
-If more data is needed about why the action is blocked, the `analyze` can be called
+If more data is needed about why the action is blocked, the `analyze` can be called:
 
 ```ruby
-action = NotifyViaEmailAction.new("thing")
+action = NotifyViaEmailAction.new(:thing)
 
 while true
   action.increment!

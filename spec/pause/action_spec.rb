@@ -139,6 +139,56 @@ describe Pause::Action do
     end
   end
 
+  context 'DSL usage' do
+    class CowRateLimited < Pause::Action
+      scope 'cow:moo'
+      check period_seconds: 10, max_allowed: 2, block_ttl: 40
+      check period_seconds: 20, max_allowed: 4, block_ttl: 40
+    end
+
+    let(:identifier) { 'cow-moo' }
+    let(:action) { CowRateLimited.new(identifier) }
+    let(:bogus) { Struct.new(:name, :event).new }
+
+    describe '#unless_rate_limited' do
+      before do
+        expect(bogus).to receive(:name).exactly(2).times
+      end
+      it 'should call through the block' do
+        action.unless_rate_limited { bogus.name }
+        action.unless_rate_limited { bogus.name }
+        result = action.unless_rate_limited { bogus.name }
+        expect(result).to be_a_kind_of(::Pause::RateLimitedEvent)
+      end
+    end
+
+    describe '#unless_rate_limited' do
+      before { expect(bogus).to receive(:name).exactly(2).times }
+
+      it 'should call through the block' do
+        3.times { action.unless_rate_limited { bogus.name } }
+      end
+
+      describe '#if_rate_limited' do
+        before { 2.times { action.unless_rate_limited { bogus.name } } }
+
+        it 'it should not analyze during method call' do
+          bogus.event = 1
+          action.if_rate_limited { |event| bogus.event = event }
+          expect(bogus.event).to be_a_kind_of(::Pause::RateLimitedEvent)
+          expect(bogus.event.identifier).to eq(identifier)
+        end
+
+        it 'should analyze if requested' do
+          action.unless_rate_limited { bogus.name }
+          result = action.if_rate_limited { |event| bogus.event = event }
+          expect(bogus.event).to be_a_kind_of(::Pause::RateLimitedEvent)
+          expect(result).to eq(bogus.event)
+        end
+      end
+    end
+  end
+
   describe '.tracked_identifiers' do
     it 'should return all the identifiers tracked (but not blocked) so far' do
       action.increment!

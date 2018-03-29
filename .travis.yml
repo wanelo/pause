@@ -1,14 +1,14 @@
 language: ruby
 rvm:
   - 2.3.3
-  - 2.4.0
-script: "bundle exec rake"
+  - 2.4.3
+  - 2.5.0
+script: "bundle exec rake || bundle exec rspec --only-failures"
 services:
   - redis-server
 notifications:
   email:
     recipients:
-      - dev-info@wanelo.com
       - kigster@gmail.com
     on_success: never
     on_failure: always

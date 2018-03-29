@@ -10,8 +10,8 @@ module Pause
     # @return [nil]  everything is fine
     # @return [false]  this action is already blocked
     # @return [Pause::RateLimitedEvent]  the action was blocked as a result of this check
-    def check(action)
-      return false if adapter.rate_limited?(action.scope, action.identifier)
+    def check(action, recalculate: false)
+      return false if adapter.rate_limited?(action.scope, action.identifier) && !recalculate
       timestamp = period_marker(Pause.config.resolution, Time.now.to_i)
       set       = adapter.key_history(action.scope, action.identifier)
       action.checks.each do |period_check|

@@ -31,29 +31,23 @@ describe Pause::Redis::Adapter do
       expect(set[0].size).to eql(2)
     end
 
-    RSpec.shared_examples 'removes old elements' do
+    context 'removing two elements' do
+      let(:to_delete) { 2 }
       let(:time) { Time.now }
       before do
+        adapter
         to_delete.times do |t|
           expect(redis_conn).to receive(:zrem).with(tracked_key, [adapter.period_marker(resolution, time + t)]).once
         end
         adapter.time_blocks_to_keep = 1
       end
       it 'should remove old elements' do
-        Timecop.freeze time do
-          adapter.increment(scope, identifier, Time.now.to_i)
-        end
+        adapter.increment(scope, identifier, time.to_i)
         to_delete.times do |t|
-          Timecop.freeze time + (adapter.resolution + t + 1) do
-            adapter.increment(scope, identifier, Time.now.to_i)
-          end
+          next_time = time + (adapter.resolution + t + 1)
+          adapter.increment(scope, identifier, next_time.to_i)
         end
       end
-    end
-
-    context 'removing two elements' do
-      let(:to_delete) { 2 }
-      it_behaves_like 'removes old elements'
     end
 
     it 'sets expiry on key' do

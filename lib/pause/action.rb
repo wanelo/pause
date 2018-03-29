@@ -34,7 +34,6 @@ module Pause
         end
       end
 
-
       # Actions can be globally disabled or re-enabled in a persistent
       # way.
       #
@@ -62,7 +61,6 @@ module Pause
         !enabled?
       end
 
-
       # Action subclasses should define their checks as follows
       #
       #  period_seconds - compare all activity by an identifier within the time period
@@ -75,14 +73,18 @@ module Pause
       #       check period_seconds: 1800, max_allowed: 2000, block_ttl: 3600
       #     end
       #
-      def check(*args)
+      def check(*args, **opts)
         self.checks ||= []
-        params      =
-          if args.first.is_a?(Hash)
-            [args.first[:period_seconds], args.first[:max_allowed], args.first[:block_ttl]]
+
+        params =
+          if args.empty?
+            # if block_ttl is not provided, just default to the period
+            opts[:block_ttl] ||= opts[:period_seconds]
+            [opts[:period_seconds], opts[:max_allowed], opts[:block_ttl]]
           else
             args
           end
+
         self.checks << Pause::PeriodCheck.new(*params)
       end
 
@@ -101,7 +103,21 @@ module Pause
       def adapter
         Pause.adapter
       end
+    end
 
+    def unless_rate_limited(count: 1, timestamp: Time.now.to_i, &_block)
+      check_result = analyze
+      if check_result.nil?
+        yield
+        increment!(count, timestamp)
+      else
+        check_result
+      end
+    end
+
+    def if_rate_limited(&_block)
+      check_result = analyze(recalculate: true)
+      yield(check_result) unless check_result.nil?
     end
 
     def checks
@@ -127,8 +143,8 @@ module Pause
       false
     end
 
-    def analyze
-      Pause.analyzer.check(self)
+    def analyze(recalculate: false)
+      Pause.analyzer.check(self, recalculate: recalculate)
     end
 
     def unblock
