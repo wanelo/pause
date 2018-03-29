@@ -151,19 +151,28 @@ describe Pause::Action do
     let(:bogus) { Struct.new(:name, :event).new }
 
     describe '#unless_rate_limited' do
-      before do
-        expect(bogus).to receive(:name).exactly(2).times
+      before { expect(bogus).to receive(:name).exactly(2).times }
+
+      describe '#initialize' do
+        before { expect(bogus).to receive(:event).exactly(1).times }
+        it 'should be able to use methods inside the #new block' do
+          b = bogus
+          CowRateLimited.new(identifier) do
+            unless_rate_limited { b.name } # this executes
+            unless_rate_limited { b.name } # this also executes
+            unless_rate_limited { b.name } # and this will be rate limited
+            if_rate_limited { b.event }
+          end
+        end
       end
+
+
       it 'should call through the block' do
         action.unless_rate_limited { bogus.name }
         action.unless_rate_limited { bogus.name }
         result = action.unless_rate_limited { bogus.name }
         expect(result).to be_a_kind_of(::Pause::RateLimitedEvent)
       end
-    end
-
-    describe '#unless_rate_limited' do
-      before { expect(bogus).to receive(:name).exactly(2).times }
 
       it 'should call through the block' do
         3.times { action.unless_rate_limited { bogus.name } }

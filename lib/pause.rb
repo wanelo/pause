@@ -1,4 +1,5 @@
 require 'redis'
+require 'colored2'
 require 'pause/version'
 require 'pause/configuration'
 require 'pause/action'

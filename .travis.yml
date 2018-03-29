@@ -1,14 +1,25 @@
 language: ruby
 rvm:
-  - 2.3.3
-  - 2.4.3
-  - 2.5.0
-script: "bundle exec rake || ( sleep 1; bundle exec rspec --only-failures ) "
+- 2.3.3
+- 2.4.3
+- 2.5.0
+cache:
+- bundler
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+script: 'bundle exec rake || ( sleep 1; bundle exec rspec --only-failures ) '
 services:
-  - redis-server
+- redis-server
 notifications:
   email:
     recipients:
-      - kigster@gmail.com
+    - kigster@gmail.com
     on_success: never
     on_failure: always
+env:
+  global:
+    secure: bkq6cFUhMqn2ppqUPNax5biIivGw7uuOf1+pK4o9EFsi2qkuzLMQMulwmKC+RMLUMsaITkvec3Lp+kHwRYiXr4bxiFaBg+Q278W9o+mRWcBEh6mGnDVCgR13xdMfDZFrafEm44jEnOWJICkBlmdfMkMOriJUTowc8g745jpGEUNEu7ZqIsVFSflb+GcdYXhlouEThhkcwcdmRwkXqfq7pp8AEhiji2V5PNKiVY+Zu/lq9APAqMqFmXDZ0+SAjkeagSSCtLiXYQqc4Z1PU2Jvyov7nfDJ72VYqvfqevSe9+rqitOleR/BvIoIsGO+et7Dq94liK964fzP+spp1ODUMdhbC7tmBuYqYr3lxsK5S6bHZ9/LABHKOMbpKVJefrxmyh/QaQpjA5w3vuSkNZXD/OsZ0ddmHOvya6cv5sTX//muJVmba88IMCcmQSAZUIYK8796ACnnvDhlQ9n/ilOYzP69W+RmkyX09SH2VR9AeMSjwRESCOh0XYMevHNIjfOk24nPnsH5OT317p8dyCfn9Z+dif1iTEujRAqAzGh6AmWQNQQx6HEC8QDQGOMpLmOzlLWeQMgo90KOe78JA4iGGmVfbFvB/qJcZ4ZacG+s8tlLU8ADcq7yj2sYCHZOEatpQZbNAMjJwoZMyqojhCZgtH039LxwDXoD4/u0epk+RuY=

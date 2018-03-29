@@ -1,4 +1,4 @@
-Copyright (c) 2012 Wanelo, Inc
+Copyright © 2018 Konstantin Gredeskoul, Atasay Gokkaya, Eric Saxby, Paul Henry
 
 MIT License
 

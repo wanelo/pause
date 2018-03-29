@@ -19,6 +19,7 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency 'redis'
   gem.add_dependency 'hiredis'
+  gem.add_dependency 'colored2'
 
   gem.add_development_dependency 'simplecov'
   gem.add_development_dependency 'yard'

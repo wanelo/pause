@@ -2,9 +2,10 @@ module Pause
   class Action
     attr_accessor :identifier
 
-    def initialize(identifier)
+    def initialize(identifier, &block)
       @identifier       = identifier
       self.class.checks ||= []
+      instance_exec(&block) if block
     end
 
     def scope
