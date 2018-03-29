@@ -5,8 +5,12 @@
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
-require 'pause'
 require 'fileutils'
+
+require 'simplecov'
+SimpleCov.start
+
+require 'pause'
 
 if ENV['PAUSE_REAL_REDIS']
   require 'pause/redis/adapter'
